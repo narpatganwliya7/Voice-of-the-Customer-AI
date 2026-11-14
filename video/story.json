@@ -1,0 +1,422 @@
+{
+ "insight": {
+  "brand": "Deliveroo",
+  "avg": 2.49,
+  "pct": 50,
+  "topic_en": "Orders & delivery",
+  "drivers": [
+   {
+    "label": "Orders & delivery",
+    "stars_lost": 0.429
+   },
+   {
+    "label": "Customer service",
+    "stars_lost": 0.245
+   },
+   {
+    "label": "Payments & billing",
+    "stars_lost": 0.077
+   },
+   {
+    "label": "Price & fees",
+    "stars_lost": 0.073
+   }
+  ]
+ },
+ "agent": {
+  "case": "complaint-spike --brand \"E.Leclerc\"",
+  "steps": [
+   {
+    "tool": "run_sql",
+    "arg": "SELECT brand, sector, count(*) as cnt FROM facts WHERE brand='E.Leclerc' GROUP BY 1,2",
+    "res": "1 rows: [{\"brand\": \"E.Leclerc\", \"sector\": \"retail\", \"cnt\": 2532}]"
+   },
+   {
+    "tool": "search_reviews",
+    "arg": "brand=E.Leclerc since=2026-11-08 until=2026-11-12",
+    "res": "8 reviews read"
+   },
+   {
+    "tool": "key_drivers",
+    "arg": "brand=E.Leclerc",
+    "res": "{\"reviews\": 1071, \"avg_rating\": 3.38, \"potential\": 0.78, \"drivers\": [{\"aspect\":…"
+   },
+   {
+    "tool": "run_sql",
+    "arg": "SELECT aspect, count(*) as cnt FROM mentions m JOIN facts f ON m.review_id = f.review_id…",
+    "res": "14 rows: [{\"aspect\": \"app_reliability\", \"cnt\": 66}, {\"aspect\": \"features\", \"cnt\": 45},…"
+   }
+  ],
+  "headline": "E.Leclerc experienced a 10.61 z-score complaint spike on Nov 10, 2026, driven by app version 11.0.1 startup crashes and login failures.",
+  "actions": [
+   {
+    "expected_effect": "Restore app reliability and stop the influx of negative reviews regarding app crashes and login failures",
+    "team": "Mobile",
+    "action": "Roll back v11.0.1 or immediately issue hotfix v11.0.2 resolving startup crashes and login loop failures"
+   },
+   {
+    "action": "Establish pre-release regression testing for authentication and cold-start flows on iOS and Android",
+    "team": "IT security",
+    "expected_effect": "Prevent faulty version updates from reaching production and causing severe z-score spikes"
+   },
+   {
+    "action": "Publish an in-app notice and social/store response acknowledging the version 11 login/crash bug with an ETA for the patch",
+    "expected_effect": "Mitigate customer frustration and reduce churn among loyal card-holders and regular shoppers",
+    "team": "Customer service"
+   }
+  ],
+  "confidence": "high"
+ },
+ "reviews_angry": [
+  {
+   "r": 1,
+   "t": "La dernière mise a jour est un catastrophe",
+   "src": "App Store"
+  },
+  {
+   "r": 1,
+   "t": "maintenant a chaque fois que j'ouvre une appli j attend que la pub s affiche avant de m en servir ...",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "Le lieu d’embarquement est différent sur l’application du réel lieu d’embarquement = bus loupé",
+   "src": "App Store"
+  },
+  {
+   "r": 1,
+   "t": "Depuis plusieurs jours avec des perturbations sur le réseau. C’est insupportable, je souhaite une remise sur mon forfait",
+   "src": "App Store"
+  },
+  {
+   "r": 2,
+   "t": "la recherche par article dans les achats ne fonctionne pas",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "getting worse every year. do you even have drivers working for you?",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "chaque fois que je des l'argent dans mon compte il me manque des argent après 24h",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "La confirmation mobile ne fonctionne plus, il est impossible de faire des virements !",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "Les adresses de dépôts ne correspondent jamais",
+   "src": "App Store"
+  },
+  {
+   "r": 1,
+   "t": "application qui bug je n’arrive même pas à faire mes courses",
+   "src": "App Store"
+  },
+  {
+   "r": 1,
+   "t": "Autant que chauffeur vtc j’ai décider de quitter cette activité à cause de cette plateforme.",
+   "src": "App Store"
+  },
+  {
+   "r": 2,
+   "t": "Trop de bug et en plus, impossible d'obtenir quoique ce soit sans passer par la validation via l'application",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "j'ai fais une heure d'attente dans le froid",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "J’arrive à me connecter lors de l’installation de l’application mais après impossible de se reconnecter",
+   "src": "App Store"
+  },
+  {
+   "r": 1,
+   "t": "Demande d’activer les notifications puis plante",
+   "src": "App Store"
+  },
+  {
+   "r": 1,
+   "t": "très mal installée placement peut lisible très décus",
+   "src": "Google Play"
+  },
+  {
+   "r": 2,
+   "t": "je demande que logo lc.l lbanque soi affichée comme il ce trouvait pour lancer a moncomte",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "je ne capte plus ma connexion pour mes comptes",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "résilier le contrat impossible de joindre un conseiller",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "je n arrive pas a me connecter pour envoyer des papiers",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "Dernière maj du 29/10/2026 : scan l'entièreté des apps installées. De quel droit ?",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "Application qui nous déconnecte tous les 3 ou 4 matins. Et met 15 minutes pour nous reconnecter. Pourri.",
+   "src": "Google Play"
+  },
+  {
+   "r": 2,
+   "t": "Impossible de me connecter sur l'application et avec Mot de passe perdu je ne reçois rien dans ma boîte mail.",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "On n'a pas accès facilement l'assistance par mail",
+   "src": "Google Play"
+  },
+  {
+   "r": 1,
+   "t": "Aucune réponse de leur part après déjà une semaine de retard pour la livraison",
+   "src": "App Store"
+  },
+  {
+   "r": 1,
+   "t": "Je n’arrive pas à trouver comment faire. Je perds un peu patience.",
+   "src": "App Store"
+  },
+  {
+   "r": 1,
+   "t": "App crashes while trying to open on IOS 17.6.1",
+   "src": "App Store"
+  }
+ ],
+ "reviews_happy": [
+  {
+   "r": 5,
+   "t": "Simple et très efficace pour réserver c’est un bon moyen d’y arriver!",
+   "src": "App Store"
+  },
+  {
+   "r": 5,
+   "t": "c'est toujours bien de savoir se que l'on consomme",
+   "src": "Google Play"
+  },
+  {
+   "r": 5,
+   "t": "Application simple à utiliser et ludique.",
+   "src": "Google Play"
+  },
+  {
+   "r": 5,
+   "t": "Magasin très propre. De bons produits du terroir. Personnel très accueillant.",
+   "src": "Google Play"
+  },
+  {
+   "r": 5,
+   "t": "J’ai apprécié le petit message dans le colis",
+   "src": "Google Play"
+  },
+  {
+   "r": 5,
+   "t": "Très satisfaite du paiement et du suivi",
+   "src": "App Store"
+  },
+  {
+   "r": 5,
+   "t": "grand merci a Alexandra très accueillante et serviable au rayon sol",
+   "src": "Google Play"
+  },
+  {
+   "r": 5,
+   "t": "Application géniale intuitive et très complète",
+   "src": "Google Play"
+  },
+  {
+   "r": 5,
+   "t": "Le personnel et compétent et très a l ecoute des clients merci",
+   "src": "Google Play"
+  },
+  {
+   "r": 5,
+   "t": "Infos en temps réels. Trajets clairs. Fonctionne parfaitement.",
+   "src": "Google Play"
+  },
+  {
+   "r": 5,
+   "t": "Bonjour un merci pour Julie qui a su régler mon problème de validation tout fonctionne parfaitement",
+   "src": "Google Play"
+  },
+  {
+   "r": 5,
+   "t": "Ils y a de bonnes affaires c’est grandement appréciable pour des petits budgets comme le mien 🙂",
+   "src": "App Store"
+  }
+ ],
+ "trend": {
+  "brand": "Doctolib",
+  "points": [
+   {
+    "w": "2026-05-18",
+    "r": 4.167
+   },
+   {
+    "w": "2026-05-25",
+    "r": 3.04
+   },
+   {
+    "w": "2026-06-01",
+    "r": 3.333
+   },
+   {
+    "w": "2026-06-08",
+    "r": 3.44
+   },
+   {
+    "w": "2026-06-15",
+    "r": 4.171
+   },
+   {
+    "w": "2026-06-22",
+    "r": 3.118
+   },
+   {
+    "w": "2026-06-29",
+    "r": 3.324
+   },
+   {
+    "w": "2026-07-06",
+    "r": 3.027
+   },
+   {
+    "w": "2026-07-13",
+    "r": 4.412
+   },
+   {
+    "w": "2026-07-20",
+    "r": 4.722
+   },
+   {
+    "w": "2026-07-27",
+    "r": 4.596
+   },
+   {
+    "w": "2026-08-03",
+    "r": 4.574
+   },
+   {
+    "w": "2026-08-10",
+    "r": 4.559
+   },
+   {
+    "w": "2026-08-17",
+    "r": 4.567
+   },
+   {
+    "w": "2026-08-24",
+    "r": 4.671
+   },
+   {
+    "w": "2026-08-31",
+    "r": 4.613
+   },
+   {
+    "w": "2026-09-07",
+    "r": 4.514
+   },
+   {
+    "w": "2026-09-14",
+    "r": 4.587
+   },
+   {
+    "w": "2026-09-21",
+    "r": 4.317
+   },
+   {
+    "w": "2026-09-28",
+    "r": 4.185
+   },
+   {
+    "w": "2026-10-05",
+    "r": 4.36
+   },
+   {
+    "w": "2026-10-12",
+    "r": 4.373
+   },
+   {
+    "w": "2026-10-19",
+    "r": 4.601
+   },
+   {
+    "w": "2026-10-26",
+    "r": 4.54
+   },
+   {
+    "w": "2026-11-02",
+    "r": 4.443
+   },
+   {
+    "w": "2026-11-09",
+    "r": 4.536
+   }
+  ],
+  "label": "Real weekly rating · Doctolib · 3.5★ → 4.5★"
+ },
+ "pipeline": [
+  {
+   "n": "01",
+   "h": "Capture",
+   "p": "Google Play and App Store, the moment reviews are posted.",
+   "fig": "127,479 reviews · 41 brands"
+  },
+  {
+   "n": "02",
+   "h": "Understand",
+   "p": "15 pain points, learned from free-AI annotations, scored locally.",
+   "fig": "4,000 AI-annotated examples · sentiment accuracy 91%"
+  },
+  {
+   "n": "03",
+   "h": "Prioritise",
+   "p": "What each pain point costs in stars, brand by brand.",
+   "fig": "key-driver regression · what-if simulator"
+  },
+  {
+   "n": "04",
+   "h": "Investigate",
+   "p": "An AI agent digs into spikes and files a brief.",
+   "fig": "SQL + review search · every claim cited"
+  }
+ ],
+ "topics": [
+  "App reliability",
+  "Login & access",
+  "Device compatibility",
+  "Speed & performance",
+  "Ease of use & design",
+  "Features",
+  "Payments & billing",
+  "Price & fees",
+  "Customer service",
+  "Account management",
+  "Orders & delivery",
+  "Core service quality",
+  "Trust & security",
+  "Notifications & ads",
+  "Loyalty & rewards"
+ ]
+}
