@@ -1,0 +1,55 @@
+# Brands tracked by Écoute (France).
+# For every brand the resolver finds the official app on Google Play and the App Store
+# and only accepts it if the developer name matches `dev` (and the title matches `title`
+# when given). `play` / `ios` are hints; they are verified, never trusted blindly.
+market: {country: fr, lang: fr}
+
+brands:
+  # Banking & insurance
+  - {name: BNP Paribas,        sector: banking,   query: "Mes Comptes BNP Paribas", dev: "BNP PARIBAS", play: net.bnpparibas.mescomptes}
+  - {name: Société Générale,   sector: banking,   query: "Société Générale l'appli", dev: "Soci[ée]t[ée] G[ée]n[ée]rale"}
+  - {name: Crédit Agricole,    sector: banking,   query: "Ma Banque Crédit Agricole", dev: "Cr[ée]dit Agricole"}
+  - {name: LCL,                sector: banking,   query: "LCL Mes Comptes", dev: "^LCL"}
+  - {name: Caisse d'Épargne,   sector: banking,   query: "Banxo Caisse d'Epargne", dev: "Caisse d.?[ÉE]pargne|BPCE"}
+  - {name: La Banque Postale,  sector: banking,   query: "La Banque Postale", dev: "Banque Postale"}
+  - {name: Crédit Mutuel,      sector: banking,   query: "Crédit Mutuel", dev: "Cr[ée]dit Mutuel|Euro.?Information"}
+  - {name: BoursoBank,         sector: banking,   query: "BoursoBank", dev: "Bours"}
+  - {name: Revolut,            sector: banking,   query: "Revolut", dev: "^Revolut", play: com.revolut.revolut}
+  - {name: N26,                sector: banking,   query: "N26 banque mobile", dev: "^N26", play: de.number26.android}
+  - {name: AXA,                sector: insurance, query: "Mon AXA", dev: "^AXA"}
+  - {name: Alan,               sector: insurance, query: "Alan assurance santé", dev: "^Alan"}
+
+  # Telecom
+  - {name: Orange,             sector: telecom,   query: "Orange et moi", dev: "Orange", title: "Orange"}
+  - {name: SFR,                sector: telecom,   query: "SFR & Moi", dev: "^SFR", title: "SFR"}
+  - {name: Bouygues Telecom,   sector: telecom,   query: "Espace Client Bouygues Telecom", dev: "Bouygues"}
+  - {name: Free,               sector: telecom,   query: "Free Espace Abonné", dev: "Free Mobile|^Free|Iliad"}
+  - {name: Sosh,               sector: telecom,   query: "Sosh", dev: "Orange", title: "Sosh"}
+  - {name: RED by SFR,         sector: telecom,   query: "RED by SFR", dev: "SFR", title: "RED"}
+
+  # Retail & marketplaces
+  - {name: Decathlon,          sector: retail,    query: "Decathlon", dev: "Decathlon", play: com.decathlon.app}
+  - {name: Leroy Merlin,       sector: retail,    query: "Leroy Merlin", dev: "Leroy Merlin"}
+  - {name: Carrefour,          sector: retail,    query: "Carrefour courses", dev: "Carrefour", title: "Carrefour"}
+  - {name: E.Leclerc,          sector: retail,    query: "E.Leclerc", dev: "Leclerc|Galec|Scapest"}
+  - {name: Lidl Plus,          sector: retail,    query: "Lidl Plus", dev: "Lidl", play: com.lidl.eci.lidlplus}
+  - {name: IKEA,               sector: retail,    query: "IKEA", dev: "IKEA|Ingka", play: com.ingka.ikea.app}
+  - {name: Fnac,               sector: retail,    query: "Fnac", dev: "Fnac", title: "Fnac"}
+  - {name: Darty,              sector: retail,    query: "Darty", dev: "Darty|Fnac", title: "Darty"}
+  - {name: Sephora,            sector: retail,    query: "Sephora", dev: "Sephora"}
+  - {name: Cdiscount,          sector: retail,    query: "Cdiscount", dev: "Cdiscount"}
+  - {name: Vinted,             sector: retail,    query: "Vinted", dev: "Vinted", play: fr.vinted}
+  - {name: Leboncoin,          sector: retail,    query: "leboncoin", dev: "leboncoin|Adevinta", play: fr.leboncoin}
+  - {name: Back Market,        sector: retail,    query: "Back Market", dev: "Back ?Market", play: com.backmarket}
+
+  # Mobility, delivery, utilities, health
+  - {name: SNCF Connect,       sector: mobility,  query: "SNCF Connect", dev: "SNCF", play: com.vsct.vsc.mobileticket}
+  - {name: RATP,               sector: mobility,  query: "Bonjour RATP", dev: "RATP"}
+  - {name: BlaBlaCar,          sector: mobility,  query: "BlaBlaCar", dev: "BlaBlaCar|Comuto", play: com.comuto}
+  - {name: Uber,               sector: mobility,  query: "Uber", dev: "^Uber", play: com.ubercab, title: "^Uber(?!.*Eats)"}
+  - {name: Bolt,               sector: mobility,  query: "Bolt VTC", dev: "^Bolt", play: ee.mtakso.client, title: "^Bolt(?!.*Food)"}
+  - {name: Uber Eats,          sector: delivery,  query: "Uber Eats", dev: "^Uber", play: com.ubercab.eats, title: "Eats"}
+  - {name: Deliveroo,          sector: delivery,  query: "Deliveroo", dev: "Deliveroo", play: com.deliveroo.orderapp}
+  - {name: Doctolib,           sector: health,    query: "Doctolib", dev: "Doctolib", play: fr.doctolib.www}
+  - {name: EDF,                sector: energy,    query: "EDF & MOI", dev: "^EDF|[ÉE]lectricit[ée] de France"}
+  - {name: Engie,              sector: energy,    query: "ENGIE Mon compte", dev: "ENGIE"}

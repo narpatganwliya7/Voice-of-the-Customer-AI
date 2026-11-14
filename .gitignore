@@ -1,0 +1,17 @@
+# Data lives on the `data` branch, never on main
+store/
+*.parquet
+*.tmp
+
+# Secrets: API keys go in GitHub Secrets only
+.env
+.env.*
+*.key
+
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+node_modules/
+out/
+.DS_Store
