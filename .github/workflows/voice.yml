@@ -5,7 +5,10 @@ on:
   workflow_dispatch:
     inputs:
       voice:
-        description: "Kokoro voice (e.g. af_heart, am_michael, bf_emma, bm_george)"
+        description: "Kokoro voice for the full narration (e.g. am_michael, bm_george)"
+        default: ""
+      samples:
+        description: "Instead of the narration, one short sample per voice (separate voices with ;)"
         default: ""
 
 permissions:
@@ -27,7 +30,16 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng
       - run: pip install --extra-index-url https://download.pytorch.org/whl/cpu "torch==2.*" kokoro soundfile numpy pandas
       - run: bash scripts/databranch.sh open
-      - run: python video/tts.py --out store/video/voice ${{ inputs.voice && format('--voice {0}', inputs.voice) || '' }}
+      - name: Generate
+        env:
+          VOICE: ${{ inputs.voice }}
+          SAMPLES: ${{ inputs.samples }}
+        run: |
+          if [ -n "$SAMPLES" ]; then
+            python video/tts.py --samples "$SAMPLES" --out store/video/samples
+          else
+            python video/tts.py --out store/video/voice ${VOICE:+--voice "$VOICE"}
+          fi
       - name: Save to the data branch
         run: |
           bash scripts/databranch.sh save "data: video narration (run ${{ github.run_id }})"
