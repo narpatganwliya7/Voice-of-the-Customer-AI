@@ -39,6 +39,10 @@ def main() -> None:
     sc.add_argument("--cache", type=Path, default=Path("cache"))
     sc.add_argument("--retrain", action="store_true")
 
+    ins = sub.add_parser("insights", help="build the SQL models and key-driver analysis")
+    ins.add_argument("--store", type=Path, default=Path("store"))
+    ins.add_argument("--window", type=int, default=60, help="days used for cross-brand comparison")
+
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -58,6 +62,9 @@ def main() -> None:
         summary = score.run(args.store, args.cache, retrain=args.retrain)
         print(json.dumps(summary, indent=2, default=str))
         _summary_score(args.store, summary)
+    elif args.cmd == "insights":
+        from . import insights
+        print(json.dumps(insights.build(args.store, args.window), indent=2, default=str))
     elif args.cmd == "resolve":
         apps = resolve_all(load_config(), collect.parse_brands(args.brands))
         apps["_resolved_at"] = now().isoformat()

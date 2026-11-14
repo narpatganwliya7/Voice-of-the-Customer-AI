@@ -1,4 +1,4 @@
-name: Train & score
+name: Train, score & analyse
 
 # Distils the AI annotations into a local classifier and scores every review.
 # No API calls: runs entirely on the GitHub runner.
@@ -39,8 +39,11 @@ jobs:
           key: embeddings-${{ github.run_id }}
           restore-keys: embeddings-
 
-      - name: Train & score
+      - name: Train, score & analyse
         run: python -m ecoute score --store store --cache cache ${{ (inputs.retrain || github.event_name != 'workflow_dispatch') && '--retrain' || '' }}
+
+      - name: Build insights
+        run: python -m ecoute insights --store store
 
       - name: Save to the data branch
         run: |
