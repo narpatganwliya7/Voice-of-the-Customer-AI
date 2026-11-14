@@ -387,7 +387,7 @@
    "n": "02",
    "h": "Understand",
    "p": "15 pain points, learned from free-AI annotations, scored locally.",
-   "fig": "4,000 AI-annotated examples · sentiment accuracy 91%"
+   "fig": "4,000 AI-labelled examples · held-out sentiment accuracy 91%"
   },
   {
    "n": "03",

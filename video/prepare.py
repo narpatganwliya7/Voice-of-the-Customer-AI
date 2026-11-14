@@ -16,7 +16,7 @@ LEAD = 0.25   # seconds of picture before the voice starts in each scene
 TAIL = 0.45   # seconds after the voice ends
 
 
-def chunks(text: str, max_len: int = 64) -> list[str]:
+def chunks(text: str, max_len: int = 46) -> list[str]:
     parts = re.split(r"(?<=[.!?:;,])\s+", text.strip())
     out, cur = [], ""
     for p in parts:
@@ -51,7 +51,8 @@ def main():
     for line, tm in zip(script["lines"], timings["lines"]):
         dur = tm["duration"]
         start = t
-        frames = int(round((LEAD + dur + TAIL) * FPS))
+        tail = 2.8 if line is script["lines"][-1] else TAIL  # let the end card breathe
+        frames = int(round((LEAD + dur + tail) * FPS))
         scenes.append({"id": line["id"], "start": int(round(start * FPS)), "frames": frames})
         v0 = start + LEAD
         cs = chunks(line["fr"])

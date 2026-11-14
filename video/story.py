@@ -109,7 +109,7 @@ def main():
     pipeline = [
         {"n": "01", "h": "Capture", "p": "Google Play and App Store, the moment reviews are posted.", "fig": f"{fmt(reviews)} reviews · {brands} brands"},
         {"n": "02", "h": "Understand", "p": "15 pain points, learned from free-AI annotations, scored locally.",
-         "fig": f"{fmt(clf.get('n_train', 4000))} AI-annotated examples · sentiment accuracy {ho.get('sentiment_accuracy', 0):.0%}"},
+         "fig": f"{fmt(clf.get('n_train', 4000))} AI-labelled examples · held-out sentiment accuracy {ho.get("sentiment_accuracy", 0):.0%}"},
         {"n": "03", "h": "Prioritise", "p": "What each pain point costs in stars, brand by brand.", "fig": "key-driver regression · what-if simulator"},
         {"n": "04", "h": "Investigate", "p": "An AI agent digs into spikes and files a brief.", "fig": "SQL + review search · every claim cited"},
     ]

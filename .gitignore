@@ -16,3 +16,6 @@ node_modules/
 out/
 .DS_Store
 cache/
+video/film/node_modules/
+video/film/out/
+video/film/public/narration.wav
