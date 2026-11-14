@@ -1,7 +1,7 @@
 """Distil the LLM's annotations into a fast local classifier that scores every review.
 
 Free, private and instant: once trained, scoring a new review needs no API call.
-Features = multilingual sentence embedding + TF-IDF words + star rating.
+Features = multilingual sentence embedding + TF-IDF words and character n-grams + star rating.
 One calibrated linear model per target, thresholds tuned on out-of-fold predictions,
 and every number in the report comes from data the model did not train on.
 """
@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from pathlib import Path
 
 import joblib
@@ -37,7 +38,7 @@ def review_text(df: pd.DataFrame) -> list[str]:
 
 # --- embeddings (cached by review_id) -------------------------------------------------
 class Embeddings:
-    def __init__(self, cache_dir: Path, model: str = EMBED_MODEL, embed_fn=None, batch: int = 256):
+    def __init__(self, cache_dir: Path, model: str = EMBED_MODEL, embed_fn=None, batch: int = 8192):
         self.path = Path(cache_dir) / (re.sub(r"[^a-z0-9]+", "-", model.lower()) + ".npz")
         self.model, self.batch, self._fn = model, batch, embed_fn
         self.ids, self.mat = np.array([], dtype=object), None
@@ -47,22 +48,27 @@ class Embeddings:
 
     def _encoder(self):
         if self._fn is None:
-            from fastembed import TextEmbedding
-            m = TextEmbedding(self.model)
-            self._fn = lambda texts: np.array(list(m.embed(texts, batch_size=64)), dtype=np.float32)
+            from sentence_transformers import SentenceTransformer
+            m = SentenceTransformer(self.model, device="cpu")
+            m.max_seq_length = 128
+            self._fn = lambda texts: m.encode(texts, batch_size=128, convert_to_numpy=True, show_progress_bar=False)
         return self._fn
 
     def get(self, df: pd.DataFrame) -> np.ndarray:
         index = {rid: i for i, rid in enumerate(self.ids)}
-        missing = df[~df.review_id.isin(index)]
+        missing = df[~df.review_id.isin(index)].drop_duplicates("review_id")
         if len(missing):
-            log.info("Embedding %d new reviews with %s", len(missing), self.model)
-            enc, texts, parts = self._encoder(), review_text(missing), []
-            for i in range(0, len(texts), self.batch):
-                parts.append(enc(texts[i:i + self.batch]).astype(np.float16))
-                if (i // self.batch) % 40 == 0:
-                    log.info("  %d / %d", min(i + self.batch, len(texts)), len(texts))
-            new = np.vstack(parts)
+            # identical texts ("Super appli", "Nul") are embedded once
+            texts = [t[:600] for t in review_text(missing)]
+            uniq = list(dict.fromkeys(texts))
+            log.info("Embedding %d new reviews (%d unique texts) with %s", len(missing), len(uniq), self.model)
+            enc, parts, t0 = self._encoder(), [], time.monotonic()
+            for i in range(0, len(uniq), self.batch):
+                parts.append(enc(uniq[i:i + self.batch]).astype(np.float16))
+                done = min(i + self.batch, len(uniq))
+                log.info("  %d / %d unique texts (%.0f per second)", done, len(uniq), done / max(time.monotonic() - t0, 1e-6))
+            pos = {t: j for j, t in enumerate(uniq)}
+            new = np.vstack(parts)[[pos[t] for t in texts]]
             self.mat = new if self.mat is None else np.vstack([self.mat, new])
             self.ids = np.concatenate([self.ids, missing.review_id.to_numpy(dtype=object)])
             self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -76,25 +82,31 @@ class Featurizer:
     def __init__(self):
         self.tfidf = TfidfVectorizer(ngram_range=(1, 2), min_df=3, max_features=60000, sublinear_tf=True,
                                      strip_accents="unicode", lowercase=True)
+        # character n-grams survive the typos and SMS spelling common in app reviews
+        self.chars = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), min_df=5, max_features=80000,
+                                     sublinear_tf=True, strip_accents="unicode", lowercase=True)
 
     def fit(self, texts: list[str]) -> "Featurizer":
-        self.tfidf.fit(texts)
+        sample = texts if len(texts) <= 60000 else [texts[i] for i in np.random.default_rng(7).choice(len(texts), 60000, replace=False)]
+        self.tfidf.fit(sample)
+        self.chars.fit(sample)
         return self
 
     def transform(self, texts: list[str], emb: np.ndarray, ratings) -> sparse.csr_matrix:
         stars = np.eye(5, dtype=np.float32)[np.clip(np.asarray(ratings, dtype=int), 1, 5) - 1]
         emb = emb / (np.linalg.norm(emb, axis=1, keepdims=True) + 1e-9)
-        return sparse.hstack([self.tfidf.transform(texts), sparse.csr_matrix(emb), sparse.csr_matrix(stars * 0.5)]).tocsr()
+        return sparse.hstack([self.tfidf.transform(texts), self.chars.transform(texts),
+                              sparse.csr_matrix(emb), sparse.csr_matrix(stars * 0.5)]).tocsr()
 
 
 def _lr(**kw):
     return LogisticRegression(C=4.0, max_iter=3000, solver="liblinear" if not kw.get("multi") else "lbfgs",
-                              class_weight=kw.get("cw"))
+                              class_weight=kw.get("cw", "balanced"))
 
 
 def _best_threshold(y, p) -> tuple[float, float]:
     best = (0.5, 0.0)
-    for t in np.arange(0.15, 0.81, 0.025):
+    for t in np.arange(0.05, 0.91, 0.025):
         f = f1_score(y, p >= t, zero_division=0)
         if f > best[1]:
             best = (round(float(t), 3), f)

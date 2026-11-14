@@ -30,18 +30,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      FASTEMBED_CACHE_PATH: cache/models
+      HF_HOME: cache/hf
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -r requirements.txt
+      - name: Install (CPU-only PyTorch keeps the runner light)
+        run: |
+          pip install -r requirements.txt
+          pip install --extra-index-url https://download.pytorch.org/whl/cpu "torch==2.*" sentence-transformers
       - run: bash scripts/databranch.sh open
 
       - name: Restore embedding cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: cache
           key: embeddings-${{ github.run_id }}
@@ -49,6 +52,13 @@ jobs:
 
       - name: Analyse (train, score, insights, AI analyst)
         run: python -m ecoute score --store store --cache cache ${{ (inputs.retrain || github.event_name != 'workflow_dispatch') && '--retrain' || '' }}
+
+      - name: Keep the embedding cache (even if a later step fails)
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: cache
+          key: embeddings-${{ github.run_id }}
 
       - name: Build insights
         run: python -m ecoute insights --store store

@@ -57,6 +57,7 @@ def run(store_dir: Path, cache_dir: Path, *, retrain: bool = False, embed_fn=Non
     else:
         model = classify.load(store_dir)
 
+    emb.get(reviews)  # embed everything once (cached), then score
     pred = classify.predict(model, reviews, emb)
     pred["label_source"] = "classifier"
     if len(labels):  # the LLM's own annotation wins where we have it
