@@ -93,12 +93,15 @@ def test_store_dedupes_and_tracks_last_seen(tmp_path):
 
 def test_resolver_rejects_lookalike_apps(monkeypatch):
     brand = {"name": "Uber Eats", "query": "Uber Eats", "dev": "^Uber", "title": "Eats"}
-    monkeypatch.setattr(resolve, "play_search", lambda *a, **k: [
-        {"appId": "com.fake.eats", "title": "Uber Eats Guide", "developer": "Some Dev"},
-        {"appId": "com.ubercab", "title": "Uber - Commandez une course", "developer": "Uber Technologies, Inc."},
-        {"appId": "com.ubercab.eats", "title": "Uber Eats : livraison", "developer": "Uber Technologies, Inc."},
-    ])
-    monkeypatch.setattr(resolve, "play_app", lambda app_id, **k: {"appId": app_id, "title": "Uber Eats", "developer": "Uber Technologies, Inc."})
+    details = {
+        "com.fake.eats": {"title": "Uber Eats Guide", "developer": "Some Dev"},
+        "com.ubercab": {"title": "Uber - Commandez une course", "developer": "Uber Technologies, Inc."},
+        "com.ubercab.eats": {"title": "Uber Eats : livraison", "developer": "Uber Technologies, Inc."},
+    }
+    html = "".join(f'<a href="/store/apps/details?id={i}">x</a>' for i in details)
+    monkeypatch.setattr(resolve.requests, "Session", lambda: SimpleNamespace(
+        get=lambda *a, **k: SimpleNamespace(text=html, raise_for_status=lambda: None)))
+    monkeypatch.setattr(resolve, "play_app", lambda app_id, **k: {"appId": app_id, **details[app_id]})
     assert resolve.resolve_play(brand, "fr", "fr")["id"] == "com.ubercab.eats"
 
 

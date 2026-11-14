@@ -10,11 +10,12 @@ import re
 
 import requests
 from google_play_scraper import app as play_app
-from google_play_scraper import search as play_search
 
 from .common import slug
 
 log = logging.getLogger(__name__)
+PLAY_SEARCH = "https://play.google.com/store/search"
+UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
 ITUNES_SEARCH = "https://itunes.apple.com/search"
 ITUNES_LOOKUP = "https://itunes.apple.com/lookup"
 
@@ -37,18 +38,38 @@ def resolve_play(brand: dict, country: str, lang: str) -> dict | None:
             log.warning("%s: play hint %s has developer %r, searching instead", brand["name"], hint, d.get("developer"))
         except Exception as e:  # noqa: BLE001 - app removed / renamed
             log.warning("%s: play hint %s failed (%s), searching instead", brand["name"], hint, e)
-    try:
-        hits = play_search(brand["query"], n_hits=10, lang=lang, country=country)
-    except Exception as e:  # noqa: BLE001
-        log.error("%s: play search failed: %s", brand["name"], e)
-        return None
-    for h in hits:
-        if h.get("appId") and _ok(brand, h.get("developer"), h.get("title")):
-            try:
-                return _play_info(play_app(h["appId"], lang=lang, country=country))
-            except Exception:  # noqa: BLE001
-                return {"id": h["appId"], "title": h.get("title"), "developer": h.get("developer")}
+    for app_id in search_play_ids(brand["query"], country, lang):
+        try:
+            d = play_app(app_id, lang=lang, country=country)
+        except Exception:  # noqa: BLE001
+            continue
+        if _ok(brand, d.get("developer"), d.get("title")):
+            return _play_info(d)
+    log.error("%s: no official Google Play app found", brand["name"])
     return None
+
+
+def search_play_ids(query: str, country: str, lang: str, limit: int = 8,
+                    session: requests.Session | None = None) -> list[str]:
+    """App ids from the Play Store search page, in ranking order.
+
+    Reads the public search page directly (the scraper library's search parser
+    breaks whenever Google changes its page layout); each id is then verified
+    through the app details page, so only the id list is taken from here.
+    """
+    s = session or requests.Session()
+    try:
+        r = s.get(PLAY_SEARCH, params={"q": query, "c": "apps", "hl": lang, "gl": country.upper()},
+                  headers={"User-Agent": UA, "Accept-Language": lang}, timeout=20)
+        r.raise_for_status()
+    except Exception as e:  # noqa: BLE001
+        log.error("play search %r failed: %s", query, e)
+        return []
+    ids = []
+    for m in re.finditer(r"/store/apps/details\?id=([A-Za-z0-9_.]+)", r.text):
+        if m.group(1) not in ids:
+            ids.append(m.group(1))
+    return ids[:limit]
 
 
 def _play_info(d: dict) -> dict:

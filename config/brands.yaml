@@ -39,11 +39,11 @@ brands:
   - {name: Sephora,            sector: retail,    query: "Sephora", dev: "Sephora"}
   - {name: Cdiscount,          sector: retail,    query: "Cdiscount", dev: "Cdiscount"}
   - {name: Vinted,             sector: retail,    query: "Vinted", dev: "Vinted", play: fr.vinted}
-  - {name: Leboncoin,          sector: retail,    query: "leboncoin", dev: "leboncoin|Adevinta", play: fr.leboncoin}
+  - {name: Leboncoin,          sector: retail,    query: "leboncoin", dev: "leboncoin|LBC|Adevinta", play: fr.leboncoin}
   - {name: Back Market,        sector: retail,    query: "Back Market", dev: "Back ?Market", play: com.backmarket}
 
   # Mobility, delivery, utilities, health
-  - {name: SNCF Connect,       sector: mobility,  query: "SNCF Connect", dev: "SNCF", play: com.vsct.vsc.mobileticket}
+  - {name: SNCF Connect,       sector: mobility,  query: "SNCF Connect", dev: "SNCF"}
   - {name: RATP,               sector: mobility,  query: "Bonjour RATP", dev: "RATP"}
   - {name: BlaBlaCar,          sector: mobility,  query: "BlaBlaCar", dev: "BlaBlaCar|Comuto", play: com.comuto}
   - {name: Uber,               sector: mobility,  query: "Uber", dev: "^Uber", play: com.ubercab, title: "^Uber(?!.*Eats)"}
