@@ -51,5 +51,5 @@ brands:
   - {name: Uber Eats,          sector: delivery,  query: "Uber Eats", dev: "^Uber", play: com.ubercab.eats, title: "Eats"}
   - {name: Deliveroo,          sector: delivery,  query: "Deliveroo", dev: "Deliveroo", play: com.deliveroo.orderapp}
   - {name: Doctolib,           sector: health,    query: "Doctolib", dev: "Doctolib", play: fr.doctolib.www}
-  - {name: EDF,                sector: energy,    query: "EDF et moi", dev: "^EDF|[ÉE]lectricit[ée] de France"}
+  - {name: EDF,                sector: energy,    query: "EDF et moi", dev: "^EDF|[ÉE]lectricit[ée] de France", title: "MOI"}
   - {name: Engie,              sector: energy,    query: "ENGIE Mon compte", dev: "ENGIE"}
