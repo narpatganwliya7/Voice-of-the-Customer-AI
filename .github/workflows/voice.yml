@@ -28,4 +28,6 @@ jobs:
       - run: pip install --extra-index-url https://download.pytorch.org/whl/cpu "torch==2.*" kokoro soundfile numpy pandas
       - run: bash scripts/databranch.sh open
       - run: python video/tts.py --out store/video/voice ${{ inputs.voice && format('--voice {0}', inputs.voice) || '' }}
-      - run: bash scripts/databranch.sh save "data: video narration (run ${{ github.run_id }})"
+      - name: Save to the data branch
+        run: |
+          bash scripts/databranch.sh save "data: video narration (run ${{ github.run_id }})"
