@@ -16,6 +16,9 @@ on:
       max_per_app:
         description: "Max Google Play reviews per app"
         default: "2000"
+      since_days:
+        description: "How many days back to go"
+        default: "180"
       refresh_apps:
         description: "Re-check official app ids"
         type: boolean
@@ -49,6 +52,7 @@ jobs:
           --mode "${{ inputs.mode || 'incremental' }}"
           --brands "${{ inputs.brands || 'all' }}"
           --max-per-app "${{ inputs.max_per_app || '2000' }}"
+          --since-days "${{ inputs.since_days || '180' }}"
           ${{ inputs.refresh_apps && '--refresh-apps' || '' }}
 
       - name: Save to the data branch

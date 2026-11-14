@@ -25,7 +25,7 @@ from .common import now
 from .taxonomy import ASPECTS, CHURN, OVERALL
 
 log = logging.getLogger(__name__)
-EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
+EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"  # fast on CPU runners
 MIN_POSITIVES = 8
 UPDATE_RX = re.compile(r"(depuis|apr[eè]s) (la |cette |une |les )?(derni[eè]re |nouvelle )?(mise [àa] jour|maj|m\.a\.j|update|version)|"
                        r"\bmaj\b|mise [àa] jour.{0,40}(plante|bug|marche plus|fonctionne plus|impossible)", re.I)
