@@ -1,0 +1,52 @@
+name: Annotate with free AI
+
+# Labels the training sample and the gold set with a free LLM (Gemini free tier).
+# Resumable: when the daily free quota runs out, progress is saved and the next run continues.
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max reviews to annotate in this run"
+        default: "4300"
+      batch:
+        description: "Reviews per LLM call"
+        default: "40"
+      model:
+        description: "Pin a Gemini model (optional, e.g. gemini-2.5-flash)"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-branch
+  cancel-in-progress: false
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: bash scripts/databranch.sh open
+
+      - name: Annotate
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ inputs.model }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+        run: python -m ecoute label --store store --limit "${{ inputs.limit || '4300' }}" --batch "${{ inputs.batch || '40' }}"
+
+      - name: Save to the data branch
+        if: always()   # keep partial progress even if the run is interrupted
+        run: |
+          [ -f store/labels.parquet ] || exit 0
+          N=$(python -c "import pandas as pd;print(len(pd.read_parquet('store/labels.parquet')))")
+          bash scripts/databranch.sh save "data: $N reviews annotated (run ${{ github.run_id }})"
