@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Écoute · Voice of the Customer</title>
+<meta name="description" content="Écoute listens to what customers of 41 French brands write in app reviews, explains every complaint and ranks what to fix first by the stars it costs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,300..900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* Layout: a listening studio. One dark room; amber is the signal, red is pain, green is recovery.
+   The wordmark is the one loud thing: its letters breathe with real review volume. */
+:root {
+  --ink: #0a0e1a;
+  --panel: #111729;
+  --panel-2: #172037;
+  --line: #263052;
+  --text: #e8ecf6;
+  --muted: #8f99b6;
+  --signal: #ffb547;
+  --neg: #ff6166;
+  --pos: #3ddc97;
+  --mix: #b9a7ff;
+  --display: "Anybody", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --step--1: 13px; --step-0: 16px; --step-1: 20px; --step-2: 28px; --step-3: 40px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--ink); color: var(--text); font: var(--step-0)/1.55 var(--body); -webkit-font-smoothing: antialiased; }
+a { color: var(--signal); }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+
+/* top bar */
+.top { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--ink) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 24px; height: 56px; }
+.brandmark { font: 800 22px/1 var(--display); font-stretch: 125%; letter-spacing: -0.02em; text-decoration: none; color: var(--text); }
+.brandmark span { color: var(--signal); }
+.top nav { display: flex; gap: 18px; flex-wrap: wrap; font-size: var(--step--1); }
+.top nav a { color: var(--muted); text-decoration: none; }
+.top nav a:hover { color: var(--text); }
+.top .gh { margin-left: auto; font-size: var(--step--1); }
+.live { display: flex; align-items: center; gap: 8px; font: 12px var(--mono); color: var(--muted); border-bottom: 1px solid var(--line); }
+.live .wrap { display: flex; gap: 18px; flex-wrap: wrap; padding-top: 7px; padding-bottom: 7px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--muted); margin-right: 6px; vertical-align: 0; }
+.dot.on { background: var(--pos); box-shadow: 0 0 0 4px color-mix(in srgb, var(--pos) 25%, transparent); }
+
+/* hero */
+.hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+.hero .wrap { position: relative; z-index: 2; padding-top: 56px; padding-bottom: 28px; display: grid; gap: 22px; }
+.eyebrow { font: 500 12px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--signal); }
+.word { font-family: var(--display); font-weight: 850; font-size: clamp(76px, 15vw, 210px); line-height: .82; letter-spacing: -0.035em; margin: 0; display: flex; user-select: none; }
+.word span { display: inline-block; font-variation-settings: "wdth" 100; transition: font-variation-settings .9s cubic-bezier(.2,.8,.2,1), color .6s; }
+.word span.hit { color: var(--signal); }
+.hero h1 { font: 500 clamp(24px, 3.2vw, 40px)/1.15 var(--display); font-stretch: 112%; margin: 0; max-width: 21ch; text-wrap: balance; }
+.hero h1 em { font-style: normal; color: var(--signal); }
+.hero p.lede { margin: 0; max-width: 60ch; color: var(--muted); font-size: var(--step-1); line-height: 1.5; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 11px 20px; font-weight: 600; text-decoration: none; border: 1px solid var(--line); color: var(--text); background: var(--panel); }
+.btn.primary { background: var(--signal); color: #1b1203; border-color: var(--signal); }
+.stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--line); margin-top: 18px; }
+.stat { padding: 16px 16px 6px 0; }
+.stat b { display: block; font: 700 clamp(26px, 3.4vw, 40px)/1 var(--display); font-stretch: 110%; font-variant-numeric: tabular-nums; }
+.stat small { color: var(--muted); font-size: var(--step--1); }
+.stream { position: relative; z-index: 1; display: grid; gap: 10px; padding: 0 0 26px; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.lane { display: flex; gap: 10px; width: max-content; animation: drift linear infinite; }
+.lane:nth-child(2) { animation-direction: reverse; }
+@keyframes drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.rv { width: 330px; flex: none; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--muted); border-radius: 10px; padding: 10px 12px; font-size: 14px; line-height: 1.4; }
+.rv.negative { border-left-color: var(--neg); }
+.rv.positive { border-left-color: var(--pos); }
+.rv.mixed { border-left-color: var(--mix); }
+.rv header { display: flex; gap: 8px; justify-content: space-between; font: 11px var(--mono); color: var(--muted); margin-bottom: 4px; }
+.rv header b { color: var(--text); font-weight: 500; }
+.rv .stars { color: var(--signal); letter-spacing: 1px; }
+.rv p { margin: 0; overflow-wrap: anywhere; }
+.wave { position: absolute; inset: auto 0 0 0; height: 46%; z-index: 0; opacity: .5; pointer-events: none; }
+
+/* sections */
+section.block { padding: 84px 0 20px; }
+.kicker { font: 500 12px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--signal); margin: 0 0 10px; }
+h2 { font: 700 clamp(30px, 4vw, 52px)/1.02 var(--display); font-stretch: 108%; letter-spacing: -0.02em; margin: 0 0 14px; max-width: 20ch; text-wrap: balance; }
+.intro { color: var(--muted); max-width: 66ch; margin: 0 0 28px; font-size: var(--step-1); line-height: 1.5; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+.card h3 { margin: 0 0 12px; font: 600 var(--step--1) var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+/* pipeline */
+.pipe { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.pipe > div { padding: 22px; border-right: 1px solid var(--line); background: var(--panel); position: relative; }
+.pipe > div:last-child { border-right: 0; }
+.pipe .n { font: 12px var(--mono); color: var(--signal); }
+.pipe h4 { font: 700 26px/1.1 var(--display); font-stretch: 115%; margin: 8px 0 8px; }
+.pipe p { margin: 0 0 12px; color: var(--muted); font-size: 15px; }
+.pipe .fig { font: 500 14px var(--mono); color: var(--text); }
+.lanes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.lanes .card p { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
+.tag { display: inline-block; font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; border-radius: 999px; padding: 2px 9px; border: 1px solid currentColor; }
+.tag.fast { color: var(--pos); } .tag.deep { color: var(--signal); }
+
+/* explorer */
+.picker { display: grid; gap: 10px; margin-bottom: 18px; }
+.sectors { display: flex; gap: 6px; flex-wrap: wrap; }
+.sectors button, .chips button { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 12px; font-size: 14px; }
+.sectors button[aria-pressed="true"] { background: var(--text); color: var(--ink); border-color: var(--text); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chips button[aria-pressed="true"] { background: var(--signal); color: #1b1203; border-color: var(--signal); font-weight: 600; }
+.ex { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; }
+.ex-side { display: grid; gap: 16px; align-content: start; }
+.big { font: 800 64px/1 var(--display); font-stretch: 105%; font-variant-numeric: tabular-nums; }
+.big small { font: 400 16px var(--body); color: var(--muted); }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; font-size: 14px; margin-top: 14px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; font-family: var(--mono); text-align: right; }
+.ex-main { display: grid; gap: 16px; }
+.two { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; }
+.bars { display: grid; gap: 9px; }
+.bar { display: grid; grid-template-columns: 170px minmax(0, 1fr) 64px; gap: 10px; align-items: center; font-size: 14px; }
+.bar .track { height: 14px; background: var(--panel-2); border-radius: 3px; overflow: hidden; }
+.bar .fill { display: block; height: 100%; background: var(--neg); border-radius: 3px; transition: width .6s; }
+.bar .val { font-family: var(--mono); text-align: right; color: var(--neg); }
+.bar small { display: block; color: var(--muted); font-size: 12px; }
+.whatif { display: grid; gap: 12px; }
+.whatif select, .whatif input { width: 100%; }
+.whatif select { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: inherit; }
+.whatif input[type=range] { accent-color: var(--signal); }
+.whatif .out { font: 700 34px/1.1 var(--display); font-stretch: 105%; }
+.whatif .out .up { color: var(--pos); }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.quotes { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.q { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: var(--panel-2); display: grid; gap: 8px; align-content: start; }
+.q.pain { border-top: 3px solid var(--neg); } .q.praise { border-top: 3px solid var(--pos); }
+.q .t { font-size: 15px; margin: 0; overflow-wrap: anywhere; }
+.q .g { font-size: 13px; color: var(--muted); margin: 0; font-style: italic; }
+.q .m { font: 11px var(--mono); color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 8px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); font-variant-numeric: tabular-nums; }
+.up-bad { color: var(--neg); } .down-good { color: var(--pos); }
+.spark { width: 100%; height: 90px; display: block; }
+
+/* heatmap */
+.hm-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); padding: 14px; }
+.hm { width: auto; border-collapse: separate; border-spacing: 2px; font-size: 12px; min-width: 980px; }
+.hm th { text-transform: none; letter-spacing: 0; font: 500 11px var(--body); color: var(--muted); padding: 2px 4px; border: 0; vertical-align: bottom; }
+.hm th.col { writing-mode: vertical-rl; transform: rotate(180deg); height: 130px; text-align: left; }
+.hm td { width: 42px; height: 22px; padding: 0; border: 0; border-radius: 3px; text-align: center; font: 10px var(--mono); color: transparent; cursor: default; }
+.hm td:hover { color: var(--text); outline: 1px solid var(--text); }
+.hm td.rowh { width: auto; text-align: left; color: var(--text); font: 13px var(--body); padding-right: 10px; white-space: nowrap; cursor: pointer; }
+.hm tr.sector td.rowh { color: var(--signal); font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; padding-top: 10px; cursor: default; }
+.legend { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.legend i { width: 160px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--panel-2), #7a2430, var(--neg)); }
+
+/* switching + radar */
+#sankey { width: 100%; height: 520px; display: block; }
+.radar { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.alert { border: 1px solid var(--line); border-left: 3px solid var(--neg); border-radius: 12px; padding: 14px 16px; background: var(--panel); }
+.alert.good { border-left-color: var(--pos); }
+.alert b { font: 700 20px/1.1 var(--display); font-stretch: 110%; display: block; margin: 4px 0; }
+.alert .m { font: 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+/* agent */
+.agent { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.cases { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.cases button { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 12px; font-size: 13px; }
+.cases button[aria-pressed="true"] { border-color: var(--signal); color: var(--signal); }
+.term { background: #070a13; border: 1px solid var(--line); border-radius: 14px; padding: 16px; font: 13px/1.55 var(--mono); min-height: 420px; max-height: 560px; overflow: auto; }
+.term .st { margin: 0 0 14px; }
+.term .tool { color: var(--signal); }
+.term .arg { color: #9fb3ff; white-space: pre-wrap; overflow-wrap: anywhere; }
+.term .res { color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+.term .th { color: var(--text); }
+.brief h4 { font: 700 26px/1.15 var(--display); font-stretch: 108%; margin: 6px 0 14px; text-wrap: balance; }
+.brief dl { display: grid; gap: 10px; margin: 0 0 14px; }
+.brief dt { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.brief dd { margin: 2px 0 0; }
+.ev { border-left: 2px solid var(--line); padding: 2px 0 2px 10px; margin: 8px 0; font-size: 14px; }
+.ok { color: var(--pos); font: 500 11px var(--mono); }
+.empty { color: var(--muted); font-style: italic; }
+
+/* method */
+.method { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.method ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; }
+.method li { margin: 6px 0; }
+footer { border-top: 1px solid var(--line); margin-top: 80px; padding: 32px 0 60px; color: var(--muted); font-size: 14px; }
+footer .wrap { display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-between; }
+
+.tip { position: fixed; z-index: 50; pointer-events: none; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; max-width: 280px; box-shadow: 0 8px 30px rgba(0,0,0,.4); }
+
+@media (max-width: 980px) {
+  .ex, .two, .agent, .method, .lanes { grid-template-columns: 1fr; }
+  .pipe { grid-template-columns: 1fr 1fr; }
+  .pipe > div:nth-child(2) { border-right: 0; }
+  .pipe > div { border-bottom: 1px solid var(--line); }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bar { grid-template-columns: 120px minmax(0, 1fr) 56px; }
+}
+@media (max-width: 560px) { .pipe { grid-template-columns: 1fr; } .pipe > div { border-right: 0; } .top nav { display: none; } }
+@media (prefers-reduced-motion: reduce) { .lane { animation: none; } .word span { transition: none; } }
+</style>
+</head>
+<body>
+<div class="top"><div class="wrap">
+  <a class="brandmark" href="#">écoute<span>.</span></a>
+  <nav aria-label="Sections">
+    <a href="#how">How it works</a><a href="#explorer">Brand explorer</a><a href="#map">Pain map</a>
+    <a href="#switching">Switching</a><a href="#radar">Release radar</a><a href="#agent">AI analyst</a><a href="#method">Method</a>
+  </nav>
+  <a class="gh" href="https://github.com/narpatganwliya7/Voice-of-the-Customer-AI">GitHub ↗</a>
+</div></div>
+<div class="live"><div class="wrap" id="liveStrip"><span><span class="dot"></span>Loading…</span></div></div>
+
+<header class="hero">
+  <svg class="wave" id="wave" preserveAspectRatio="none" aria-hidden="true"></svg>
+  <div class="wrap">
+    <div class="eyebrow" id="eyebrow">Always-on Voice of the Customer</div>
+    <p class="word" id="word" aria-label="écoute"><span>é</span><span>c</span><span>o</span><span>u</span><span>t</span><span>e</span></p>
+    <h1>Every review, captured within minutes. Every issue, explained. <em>Every fix, prioritised.</em></h1>
+    <p class="lede" id="lede">Écoute reads what customers of France's best-known brands write on Google Play and the App Store, turns each review into a structured signal, and ranks what to fix first by the stars it costs.</p>
+    <div class="cta"><a class="btn primary" href="#explorer">Explore a brand →</a><a class="btn" href="#agent">Watch the AI analyst work</a></div>
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="stream" id="stream" aria-label="Recent real customer reviews"></div>
+</header>
+
+<main>
+<section class="block" id="how"><div class="wrap">
+  <p class="kicker">How Écoute listens</p>
+  <h2>From a one-star rant to a ranked fix list, automatically.</h2>
+  <p class="intro">Four stages run on their own in GitHub Actions. The fast lane scores every review with a local model for free; the deep lane calls an AI analyst only when the numbers flag something worth a human-quality explanation.</p>
+  <div class="pipe" id="pipe"></div>
+  <div class="lanes">
+    <div class="card"><span class="tag fast">Fast lane · every review</span><p>Collector → PII masking → local classifier (15 topics, tone, churn intent, severity) → SQL models. No API calls, no cost, seconds per run.</p></div>
+    <div class="card"><span class="tag deep">Deep lane · only what matters</span><p>Complaint spikes, releases that landed badly and the biggest drivers of lost stars go to the AI analyst, which investigates with SQL and real reviews and files a brief.</p></div>
+  </div>
+</div></section>
+
+<section class="block" id="explorer"><div class="wrap">
+  <p class="kicker">Brand explorer</p>
+  <h2>Where each brand loses its stars.</h2>
+  <p class="intro">Pick a brand. Écoute shows what customers complain about, how many stars each topic costs, and what the rating would become if a team fixed it.</p>
+  <div class="picker"><div class="sectors" id="sectors"></div><div class="chips" id="chips"></div></div>
+  <div class="ex">
+    <div class="ex-side">
+      <div class="card">
+        <h3 id="exName">Brand</h3>
+        <div class="big" id="exRating">–</div>
+        <small class="muted" id="exWindow"></small>
+        <svg class="spark" id="spark" aria-label="Weekly average rating"></svg>
+        <dl class="kv" id="exKv"></dl>
+      </div>
+      <div class="card"><h3>Where unhappy customers say they go</h3><div id="exSwitch"></div></div>
+    </div>
+    <div class="ex-main">
+      <div class="two">
+        <div class="card"><h3>Stars lost per topic</h3><div class="bars" id="exBars"></div><p class="note" style="margin-top:12px">Stars lost = how much the average rating would rise if the topic stopped generating complaints. Ridge regression of the star rating on topic mentions over the last 60 days.</p></div>
+        <div class="card whatif">
+          <h3>What if a team fixed it?</h3>
+          <label for="wiTopic" class="muted">Topic</label><select id="wiTopic"></select>
+          <label for="wiPct" class="muted">Share of these complaints resolved: <b id="wiPctLabel">50%</b></label>
+          <input type="range" id="wiPct" min="0" max="100" step="5" value="50">
+          <div class="out" id="wiOut">–</div>
+          <p class="note">An estimate from the regression above. It shows the size of the prize, not a promise.</p>
+        </div>
+      </div>
+      <div class="card"><h3>What customers actually wrote</h3><div class="quotes" id="exQuotes"></div></div>
+      <div class="card"><h3>Release radar · how each version landed</h3><div style="overflow-x:auto"><table id="exReleases"></table></div></div>
+    </div>
+  </div>
+</div></section>
+
+<section class="block" id="map"><div class="wrap">
+  <p class="kicker">The pain map</p>
+  <h2>41 brands, 15 topics, one picture.</h2>
+  <p class="intro">Share of each brand's recent reviews that complain about each topic. Read across a row for a brand's weak spots; read down a column to see who handles a topic best.</p>
+  <div class="hm-wrap"><table class="hm" id="hm"></table><div class="legend"><span>0%</span><i></i><span id="hmMax"></span><span>of reviews complain about the topic</span></div></div>
+</div></section>
+
+<section class="block" id="switching"><div class="wrap">
+  <p class="kicker">Switching map</p>
+  <h2>Who unhappy customers name instead.</h2>
+  <p class="intro">Competitors named in negative reviews, or in reviews where the customer says they are leaving. Exact name matching, so every line can be traced back to real reviews.</p>
+  <div class="sectors" id="swSectors" style="margin-bottom:12px"></div>
+  <div class="card"><svg id="sankey" role="img" aria-label="Flows from brands to competitors named by unhappy customers"></svg></div>
+</div></section>
+
+<section class="block" id="radar"><div class="wrap">
+  <p class="kicker">Release radar &amp; spikes</p>
+  <h2>Caught the day it breaks, not the quarter after.</h2>
+  <p class="intro">Each app version is compared with the one before it, and each day's complaints with the brand's own 28-day baseline. These are the alerts that wake the AI analyst.</p>
+  <div class="radar" id="radarList"></div>
+</div></section>
+
+<section class="block" id="agent"><div class="wrap">
+  <p class="kicker">The AI analyst</p>
+  <h2>An agent that investigates, cites, and recommends.</h2>
+  <p class="intro">For each alert, Écoute Analyst queries the data with SQL, reads real reviews and files a brief with owners and actions. Every step is logged below; cited reviews are checked against what the agent actually read.</p>
+  <div class="cases" id="cases"></div>
+  <div class="agent">
+    <div class="term" id="term" aria-live="polite"></div>
+    <div class="card brief" id="brief"></div>
+  </div>
+</div></section>
+
+<section class="block" id="method"><div class="wrap">
+  <p class="kicker">Method &amp; honesty</p>
+  <h2>What is measured, and what is not.</h2>
+  <div class="method">
+    <div class="card"><h3>Data</h3><ul id="mData"></ul></div>
+    <div class="card"><h3>Model quality</h3><div id="mModel"></div></div>
+    <div class="card"><h3>Limits</h3><ul>
+      <li>App reviews over-represent strong opinions; they are a signal, not a survey.</li>
+      <li>Stars-lost figures come from a regression: correlation, not proof of cause.</li>
+      <li>Topic labels come from a free AI annotator distilled into a local model; quality figures are shown, not assumed.</li>
+      <li>Capture latency is reported only from live runs that measured it.</li>
+    </ul></div>
+  </div>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <span>Écoute · built by Narpat Ganwliya · Python, DuckDB, scikit-learn, free Gemini tier, GitHub Actions</span>
+  <span id="built"></span>
+</div></footer>
+<div class="tip" id="tip" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

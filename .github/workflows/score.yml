@@ -60,6 +60,9 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python -m ecoute agent --store store --max-cases "${{ inputs.max_cases || '5' }}"
 
+      - name: Build website data
+        run: python -m ecoute site --store store --out store/site
+
       - name: Save to the data branch
         run: |
           N=$(python -c "import pandas as pd;print(len(pd.read_parquet('store/scored.parquet')))")

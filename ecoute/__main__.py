@@ -47,6 +47,10 @@ def main() -> None:
     ag.add_argument("--store", type=Path, default=Path("store"))
     ag.add_argument("--max-cases", type=int, default=5)
 
+    st = sub.add_parser("site", help="build the website data bundle")
+    st.add_argument("--store", type=Path, default=Path("store"))
+    st.add_argument("--out", type=Path, default=Path("store/site"))
+
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -76,6 +80,9 @@ def main() -> None:
         res = agent.run(args.store, llm, args.max_cases)
         print(json.dumps(res, indent=2))
         _summary_agent(args.store, res)
+    elif args.cmd == "site":
+        from . import site
+        print(json.dumps(site.build(args.store, args.out), indent=2))
     elif args.cmd == "resolve":
         apps = resolve_all(load_config(), collect.parse_brands(args.brands))
         apps["_resolved_at"] = now().isoformat()
