@@ -6,3 +6,7 @@ pytz
 PyYAML>=6
 requests>=2.32
 pytest>=9
+scikit-learn>=1.5
+scipy>=1.13
+joblib>=1.4
+fastembed>=0.7

@@ -1,0 +1,48 @@
+name: Train & score
+
+# Distils the AI annotations into a local classifier and scores every review.
+# No API calls: runs entirely on the GitHub runner.
+on:
+  workflow_dispatch:
+    inputs:
+      retrain:
+        description: "Retrain the classifier from the latest annotations"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-branch
+  cancel-in-progress: false
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      FASTEMBED_CACHE_PATH: cache/models
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: bash scripts/databranch.sh open
+
+      - name: Restore embedding cache
+        uses: actions/cache@v4
+        with:
+          path: cache
+          key: embeddings-${{ github.run_id }}
+          restore-keys: embeddings-
+
+      - name: Train & score
+        run: python -m ecoute score --store store --cache cache ${{ (inputs.retrain || github.event_name != 'workflow_dispatch') && '--retrain' || '' }}
+
+      - name: Save to the data branch
+        run: |
+          N=$(python -c "import pandas as pd;print(len(pd.read_parquet('store/scored.parquet')))")
+          bash scripts/databranch.sh save "data: $N reviews scored (run ${{ github.run_id }})"
