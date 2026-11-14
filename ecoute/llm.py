@@ -78,12 +78,38 @@ class Gemini:
                 self.models.pop(0)
         raise QuotaExhausted("all Gemini models")
 
-    def _call(self, model: str, system: str, user: str, schema: dict, attempts: int = 6):
+    def _call(self, model: str, system: str, user: str, schema: dict):
         body = {
             "systemInstruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": [{"text": user}]}],
             "generationConfig": {"temperature": 0, "responseMimeType": "application/json", "responseSchema": schema},
         }
+        data = self._post(model, body)
+        parts = (data.get("candidates") or [{}])[0].get("content", {}).get("parts", [])
+        text = "".join(p.get("text", "") for p in parts if not p.get("thought"))
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            log.warning("%s returned invalid JSON (finish=%s)", model,
+                        (data.get("candidates") or [{}])[0].get("finishReason"))
+            raise LLMError("invalid JSON")
+
+    def chat(self, system: str, contents: list[dict], tools: list[dict]) -> dict:
+        """One agent turn with function calling. Returns the model's content (parts kept as-is)."""
+        body = {"systemInstruction": {"parts": [{"text": system}]}, "contents": contents,
+                "tools": [{"functionDeclarations": tools}], "generationConfig": {"temperature": 0.2}}
+        while self.models:
+            try:
+                data = self._post(self.model, body)
+                content = (data.get("candidates") or [{}])[0].get("content") or {"role": "model", "parts": []}
+                content.setdefault("role", "model")
+                return content
+            except QuotaExhausted:
+                log.warning("Daily free quota used up for %s", self.model)
+                self.models.pop(0)
+        raise QuotaExhausted("all Gemini models")
+
+    def _post(self, model: str, body: dict, attempts: int = 6) -> dict:
         for attempt in range(attempts):
             wait = self.min_interval - (time.monotonic() - self._last)
             if wait > 0:
@@ -97,15 +123,7 @@ class Gemini:
                 time.sleep(10 * (attempt + 1))
                 continue
             if r.status_code == 200:
-                data = r.json()
-                parts = (data.get("candidates") or [{}])[0].get("content", {}).get("parts", [])
-                text = "".join(p.get("text", "") for p in parts if not p.get("thought"))
-                try:
-                    return json.loads(text)
-                except json.JSONDecodeError:
-                    log.warning("%s returned invalid JSON (finish=%s)", model,
-                                (data.get("candidates") or [{}])[0].get("finishReason"))
-                    raise LLMError("invalid JSON")
+                return r.json()
             if r.status_code == 429:
                 delay, daily = _quota_info(r)
                 if daily:

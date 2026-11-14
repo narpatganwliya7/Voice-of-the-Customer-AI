@@ -43,6 +43,10 @@ def main() -> None:
     ins.add_argument("--store", type=Path, default=Path("store"))
     ins.add_argument("--window", type=int, default=60, help="days used for cross-brand comparison")
 
+    ag = sub.add_parser("agent", help="let the analyst agent investigate what the numbers flag")
+    ag.add_argument("--store", type=Path, default=Path("store"))
+    ag.add_argument("--max-cases", type=int, default=5)
+
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -65,11 +69,38 @@ def main() -> None:
     elif args.cmd == "insights":
         from . import insights
         print(json.dumps(insights.build(args.store, args.window), indent=2, default=str))
+    elif args.cmd == "agent":
+        from . import agent
+        from .llm import providers_from_env
+        llm = next(p for p in providers_from_env() if hasattr(p, "chat"))
+        res = agent.run(args.store, llm, args.max_cases)
+        print(json.dumps(res, indent=2))
+        _summary_agent(args.store, res)
     elif args.cmd == "resolve":
         apps = resolve_all(load_config(), collect.parse_brands(args.brands))
         apps["_resolved_at"] = now().isoformat()
         Store(args.store).save_apps(apps)
         print(json.dumps(apps, ensure_ascii=False, indent=2))
+
+
+def _summary_agent(store: Path, res: dict) -> None:
+    import os
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    latest = json.loads((store / "agent" / "latest.json").read_text())
+    lines = ["## Écoute Analyst (AI agent)",
+             f"{res['filed']} of {res['cases']} cases investigated and filed · {res['tool_calls']} tool calls · "
+             f"evidence verified on {res['verified']}", ""]
+    for r in latest:
+        b = r.get("brief") or {}
+        lines.append(f"### {r['case']['brand']} · {r['case']['type'].replace('_', ' ')}")
+        lines.append(f"**{b.get('headline', 'not filed')}**  ")
+        lines.append(f"Steps: " + " → ".join(s.get('tool', 'note') for s in r["steps"]))
+        for a in b.get("actions", []):
+            lines.append(f"- {a['action']} ({a['team']}): {a['expected_effect']}")
+        lines.append("")
+    if path:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
 
 
 def _summary_score(store: Path, s: dict) -> None:

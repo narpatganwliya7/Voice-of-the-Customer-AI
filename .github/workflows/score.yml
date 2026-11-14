@@ -1,7 +1,8 @@
-name: Train, score & analyse
+name: Analyse (train, score, insights, AI analyst)
 
-# Distils the AI annotations into a local classifier and scores every review.
-# No API calls: runs entirely on the GitHub runner.
+# Fast lane: distils the AI annotations into a local classifier, scores every review and
+# builds the SQL insights with no API calls. Deep lane: the AI analyst (free Gemini tier)
+# investigates only what the numbers flag.
 on:
   workflow_dispatch:
     inputs:
@@ -9,6 +10,13 @@ on:
         description: "Retrain the classifier from the latest annotations"
         type: boolean
         default: true
+      agent:
+        description: "Let the AI analyst investigate spikes, bad releases and top drivers"
+        type: boolean
+        default: true
+      max_cases:
+        description: "Max cases for the AI analyst"
+        default: "5"
 
 permissions:
   contents: write
@@ -39,11 +47,18 @@ jobs:
           key: embeddings-${{ github.run_id }}
           restore-keys: embeddings-
 
-      - name: Train, score & analyse
+      - name: Analyse (train, score, insights, AI analyst)
         run: python -m ecoute score --store store --cache cache ${{ (inputs.retrain || github.event_name != 'workflow_dispatch') && '--retrain' || '' }}
 
       - name: Build insights
         run: python -m ecoute insights --store store
+
+      - name: AI analyst investigates
+        if: ${{ inputs.agent != false }}
+        continue-on-error: true   # the free daily quota may be used up; numbers above are still saved
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python -m ecoute agent --store store --max-cases "${{ inputs.max_cases || '5' }}"
 
       - name: Save to the data branch
         run: |
