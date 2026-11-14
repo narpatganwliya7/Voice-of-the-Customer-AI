@@ -7,7 +7,7 @@ market: {country: fr, lang: fr}
 brands:
   # Banking & insurance
   - {name: BNP Paribas,        sector: banking,   query: "Mes Comptes BNP Paribas", dev: "BNP PARIBAS", play: net.bnpparibas.mescomptes}
-  - {name: Société Générale,   sector: banking,   query: "Société Générale l'appli", dev: "Soci[ée]t[ée] G[ée]n[ée]rale"}
+  - {name: Société Générale,   sector: banking,   query: "Société Générale l'appli", dev: "Soci[ée]t[ée] G[ée]n[ée]rale", title: "^(?!.*(ESALIA|Pro|Entreprise)).*(SG|Soci)"}
   - {name: Crédit Agricole,    sector: banking,   query: "Ma Banque Crédit Agricole", dev: "Cr[ée]dit Agricole"}
   - {name: LCL,                sector: banking,   query: "LCL Mes Comptes", dev: "^LCL"}
   - {name: Caisse d'Épargne,   sector: banking,   query: "Banxo Caisse d'Epargne", dev: "Caisse d.?[ÉE]pargne|BPCE"}
@@ -29,7 +29,7 @@ brands:
 
   # Retail & marketplaces
   - {name: Decathlon,          sector: retail,    query: "Decathlon", dev: "Decathlon", play: com.decathlon.app}
-  - {name: Leroy Merlin,       sector: retail,    query: "Leroy Merlin", dev: "Leroy Merlin"}
+  - {name: Leroy Merlin,       sector: retail,    query: "Leroy Merlin", dev: "Leroy Merlin", title: "Leroy Merlin"}
   - {name: Carrefour,          sector: retail,    query: "Carrefour courses", dev: "Carrefour", title: "Carrefour"}
   - {name: E.Leclerc,          sector: retail,    query: "E.Leclerc", dev: "Leclerc|Galec|Scapest"}
   - {name: Lidl Plus,          sector: retail,    query: "Lidl Plus", dev: "Lidl", play: com.lidl.eci.lidlplus}
@@ -51,5 +51,5 @@ brands:
   - {name: Uber Eats,          sector: delivery,  query: "Uber Eats", dev: "^Uber", play: com.ubercab.eats, title: "Eats"}
   - {name: Deliveroo,          sector: delivery,  query: "Deliveroo", dev: "Deliveroo", play: com.deliveroo.orderapp}
   - {name: Doctolib,           sector: health,    query: "Doctolib", dev: "Doctolib", play: fr.doctolib.www}
-  - {name: EDF,                sector: energy,    query: "EDF & MOI", dev: "^EDF|[ÉE]lectricit[ée] de France"}
+  - {name: EDF,                sector: energy,    query: "EDF et moi", dev: "^EDF|[ÉE]lectricit[ée] de France"}
   - {name: Engie,              sector: energy,    query: "ENGIE Mon compte", dev: "ENGIE"}

@@ -20,6 +20,10 @@ ITUNES_SEARCH = "https://itunes.apple.com/search"
 ITUNES_LOOKUP = "https://itunes.apple.com/lookup"
 
 
+def _queries(brand: dict) -> list[str]:
+    return list(dict.fromkeys([brand["query"], brand["name"]]))
+
+
 def _ok(brand: dict, developer: str | None, title: str | None) -> bool:
     if not developer or not re.search(brand["dev"], developer, re.I):
         return False
@@ -38,7 +42,9 @@ def resolve_play(brand: dict, country: str, lang: str) -> dict | None:
             log.warning("%s: play hint %s has developer %r, searching instead", brand["name"], hint, d.get("developer"))
         except Exception as e:  # noqa: BLE001 - app removed / renamed
             log.warning("%s: play hint %s failed (%s), searching instead", brand["name"], hint, e)
-    for app_id in search_play_ids(brand["query"], country, lang):
+    seen = set()
+    ids = [i for q in _queries(brand) for i in search_play_ids(q, country, lang)]
+    for app_id in [i for i in ids if not (i in seen or seen.add(i))]:
         try:
             d = play_app(app_id, lang=lang, country=country)
         except Exception:  # noqa: BLE001
@@ -93,9 +99,11 @@ def resolve_ios(brand: dict, country: str, session: requests.Session | None = No
         else:
             results = []
         if not results or not _ios_ok(brand, results[0]):
-            r = s.get(ITUNES_SEARCH, params={"term": brand["query"], "country": country,
-                                             "entity": "software", "limit": 10}, timeout=20)
-            results = r.json().get("results", [])
+            results = []
+            for q in _queries(brand):
+                r = s.get(ITUNES_SEARCH, params={"term": q, "country": country,
+                                                 "entity": "software", "limit": 10}, timeout=20)
+                results += r.json().get("results", [])
     except Exception as e:  # noqa: BLE001
         log.error("%s: app store lookup failed: %s", brand["name"], e)
         return None

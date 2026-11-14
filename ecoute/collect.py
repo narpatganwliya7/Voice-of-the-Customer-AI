@@ -34,6 +34,12 @@ def run(store_dir: Path, *, mode: str = "incremental", brands: set[str] | None =
         apps["_resolved_at"] = started.isoformat()
         store.save_apps(apps)
 
+    valid = {(a["name"], src, a[key]["id"]) for k, a in apps.items() if not k.startswith("_")
+             for key, src in (("play", "google_play"), ("ios", "app_store")) if a.get(key)}
+    pruned = store.keep_apps(valid)
+    if pruned:
+        log.warning("Removed %d reviews from apps that failed verification", pruned)
+
     last = store.last_seen() if mode == "incremental" else {}
     wanted = [k for k in apps if not k.startswith("_") and (not brands or k in brands)]
 

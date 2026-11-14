@@ -52,6 +52,17 @@ class Store:
             tmp.replace(self.reviews)
         return new.to_dict("records")
 
+    def keep_apps(self, valid: set[tuple[str, str, str]]) -> int:
+        """Drop reviews from apps that are no longer the brand's verified app. Returns rows removed."""
+        if not self.reviews.exists():
+            return 0
+        df = pd.read_parquet(self.reviews)
+        keep = [(b, s, a) in valid for b, s, a in zip(df.brand, df.source, df.app_id)]
+        removed = len(df) - sum(keep)
+        if removed:
+            df[keep].to_parquet(self.reviews, index=False, compression="zstd")
+        return removed
+
     def count(self) -> int:
         if not self.reviews.exists():
             return 0
