@@ -30,9 +30,9 @@ BLOCKED = re.compile(r"\b(insert|update|delete|drop|create|alter|attach|copy|exp
 
 TOOLS = [
     {"name": "run_sql",
-     "description": ("Run a read-only DuckDB SELECT. Tables: facts(review_id, brand, sector, source, rating, at, "
+     "description": ("Run a read-only DuckDB SELECT. Tables: facts(review_id, brand, sector, source, rating, \"at\" (review time; always double-quote it), "
                      "app_version, replied, title, text, sentiment, churn, severity, after_update, aspects, competitors, "
-                     "label_source, in_window), mentions(review_id, brand, sector, rating, at, in_window, aspect, polarity), "
+                     "label_source, in_window), mentions(review_id, brand, sector, rating, \"at\", in_window, aspect, polarity), "
                      "scorecard, heatmap, weekly, weekly_topics, releases, daily, spikes, switching. Max 30 rows returned."),
      "parameters": {"type": "OBJECT", "properties": {"query": {"type": "STRING"}}, "required": ["query"]}},
     {"name": "search_reviews",
@@ -82,6 +82,7 @@ class Toolbox:
         self.seen_ids: dict[str, str] = {}
 
     def run_sql(self, query: str) -> dict:
+        query = quote_reserved(query)
         if not SAFE_SQL.match(query) or BLOCKED.search(query.rstrip().rstrip(";")):
             return {"error": "Only a single read-only SELECT over the listed tables is allowed."}
         try:
@@ -120,6 +121,15 @@ class Toolbox:
     def key_drivers(self, brand: str) -> dict:
         d = insights.drivers(self.con).get(brand)
         return d or {"error": f"Not enough recent reviews for {brand}"}
+
+
+_AT = re.compile(r'(?<![\w"])at(?![\w"])', re.I)
+
+
+def quote_reserved(sql: str) -> str:
+    """`at` (the review timestamp column) is a reserved word in DuckDB: quote it outside string literals."""
+    parts = re.split(r"('(?:[^']|'')*')", sql)
+    return "".join(p if i % 2 else _AT.sub('"at"', p) for i, p in enumerate(parts))
 
 
 def _clean(df: pd.DataFrame) -> list[dict]:

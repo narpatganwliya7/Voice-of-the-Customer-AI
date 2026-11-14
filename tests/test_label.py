@@ -124,3 +124,10 @@ def test_no_provider_configured(monkeypatch):
         monkeypatch.delenv(v, raising=False)
     with pytest.raises(llm.LLMError):
         llm.providers_from_env()
+
+
+def test_agent_sql_quotes_reserved_at_column():
+    from ecoute.agent import quote_reserved
+    q = quote_reserved("SELECT at, f.at FROM facts WHERE text LIKE '%at%' ORDER BY at")
+    assert q == "SELECT \"at\", f.\"at\" FROM facts WHERE text LIKE '%at%' ORDER BY \"at\""
+    assert quote_reserved('select "at" from facts') == 'select "at" from facts'

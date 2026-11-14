@@ -73,7 +73,9 @@ def build(store: Path, out: Path) -> dict:
         "spikes": _load(ins, "spikes", [])[:20],
         "switching": switching[:80],
         "recoveries": _load(ins, "recoveries", [])[:5],
-        "agent": _load(store / "agent", "latest", []),
+        # finished investigations with verified evidence first: they open the agent console
+        "agent": sorted(_load(store / "agent", "latest", []),
+                        key=lambda c: (not c.get("brief"), -len(c.get("evidence") or []))),
         "ticker": ticker(store),
         "runs": [json.loads(x) for x in (store / "runs.jsonl").read_text().splitlines()[-30:]] if (store / "runs.jsonl").exists() else [],
     }
