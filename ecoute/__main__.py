@@ -21,6 +21,7 @@ def main() -> None:
     c.add_argument("--mode", choices=["incremental", "backfill"], default="incremental")
     c.add_argument("--brands", default="all", help="comma-separated brand names, or 'all'")
     c.add_argument("--max-per-app", type=int, default=2000)
+    c.add_argument("--since-days", type=int, default=180, help="how far back to go")
     c.add_argument("--refresh-apps", action="store_true")
 
     r = sub.add_parser("resolve", help="find official app ids (no review download)")
@@ -43,7 +44,7 @@ def main() -> None:
 
     if args.cmd == "collect":
         rep = collect.run(args.store, mode=args.mode, brands=collect.parse_brands(args.brands),
-                          max_per_app=args.max_per_app, refresh_apps=args.refresh_apps)
+                          max_per_app=args.max_per_app, since_days=args.since_days, refresh_apps=args.refresh_apps)
         print(json.dumps({k: v for k, v in rep.items() if k != "per_brand"}, indent=2))
     elif args.cmd == "label":
         from . import label

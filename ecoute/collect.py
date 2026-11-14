@@ -18,7 +18,7 @@ APPS_MAX_AGE = timedelta(days=7)
 
 
 def run(store_dir: Path, *, mode: str = "incremental", brands: set[str] | None = None,
-        max_per_app: int = 2000, refresh_apps: bool = False, workers: int = 4) -> dict:
+        max_per_app: int = 2000, since_days: int = 180, refresh_apps: bool = False, workers: int = 4) -> dict:
     cfg = load_config()
     country, lang = cfg["market"]["country"], cfg["market"]["lang"]
     store = Store(store_dir)
@@ -41,6 +41,7 @@ def run(store_dir: Path, *, mode: str = "incremental", brands: set[str] | None =
         log.warning("Removed %d reviews from apps that failed verification", pruned)
 
     last = store.last_seen() if mode == "incremental" else {}
+    horizon = started - timedelta(days=since_days)  # backfill depth (and a floor for incremental runs)
     wanted = [k for k in apps if not k.startswith("_") and (not brands or k in brands)]
 
     def job(key: str) -> list[dict]:
@@ -48,10 +49,11 @@ def run(store_dir: Path, *, mode: str = "incremental", brands: set[str] | None =
         rows = []
         if a.get("play"):
             rows += fetch_play(a["name"], a["sector"], a["play"]["id"], country=country, lang=lang,
-                               since=last.get((a["name"], "google_play")), max_reviews=max_per_app)
+                               since=max(last.get((a["name"], "google_play"), horizon), horizon),
+                               max_reviews=max_per_app)
         if a.get("ios"):
             rows += fetch_appstore(a["name"], a["sector"], a["ios"]["id"], country=country,
-                                   since=last.get((a["name"], "app_store")))
+                                   since=max(last.get((a["name"], "app_store"), horizon), horizon))
         return rows
 
     with ThreadPoolExecutor(workers) as pool:

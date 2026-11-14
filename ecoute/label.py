@@ -17,6 +17,7 @@ import pandas as pd
 
 from . import taxonomy
 from .common import now
+from .store import Store
 from .llm import LLMError, QuotaExhausted
 
 log = logging.getLogger(__name__)
@@ -108,7 +109,7 @@ def run(store_dir: Path, providers: list, *, limit: int = 5000, batch_size: int 
         save_every: int = 5, max_calls: int | None = None) -> dict:
     store_dir = Path(store_dir)
     samples_path = store_dir / "samples.json"
-    reviews = pd.read_parquet(store_dir / "reviews.parquet")
+    reviews = Store(store_dir).read()
     if samples_path.exists():
         samples = json.loads(samples_path.read_text())
     else:

@@ -16,6 +16,7 @@ import yaml
 
 from . import classify
 from .common import ROOT, now
+from .store import Store
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def find_competitors(text: str, brand: str, sector: str) -> list[str]:
 
 def run(store_dir: Path, cache_dir: Path, *, retrain: bool = False, embed_fn=None, min_labels: int = 200) -> dict:
     store_dir = Path(store_dir)
-    reviews = pd.read_parquet(store_dir / "reviews.parquet")
+    reviews = Store(store_dir).read()
     labels_path = store_dir / "labels.parquet"
     labels = pd.read_parquet(labels_path) if labels_path.exists() else pd.DataFrame()
     emb = classify.Embeddings(cache_dir, embed_fn=embed_fn)
