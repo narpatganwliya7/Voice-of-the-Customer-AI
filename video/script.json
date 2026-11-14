@@ -1,13 +1,13 @@
 {
  "voice": "af_heart",
- "speed": 1.05,
+ "speed": 1.1,
  "lang_code": "a",
  "lines": [
   {
    "id": "hook",
-   "en": "127,479 customer reviews. 41 French brands. Most of them, nobody reads.",
-   "fr": "127 479 avis clients. 41 marques françaises. La plupart, personne ne les lit.",
-   "tts": "127,479 customer reviews. 41 French brands. Most of them, nobody reads."
+   "en": "Over 127 thousand customer reviews. 41 French brands. Most of them, nobody reads.",
+   "fr": "Plus de 127 000 avis clients. 41 marques françaises. La plupart, personne ne les lit.",
+   "tts": "Over 127 thousand customer reviews. 41 French brands. Most of them, nobody reads."
   },
   {
    "id": "problem",
@@ -35,9 +35,9 @@
   },
   {
    "id": "investigate",
-   "en": "When complaints spike, I investigate. On November 10, E.Leclerc complaints jumped. I traced them to app version 11.0.1: crashes and failed logins. Then I briefed the team that can fix it.",
-   "fr": "Quand les plaintes explosent, j'enquête. Le 10 novembre, les plaintes sur E.Leclerc ont bondi. J'ai remonté la piste jusqu'à la version 11.0.1 : plantages et connexions impossibles. Puis j'ai alerté l'équipe qui peut corriger.",
-   "tts": "When complaints spike, I investigate. On November 10, E.Leclerc complaints jumped. I traced them to app version 11.0.1: crashes and failed logins. Then I briefed the team that can fix it."
+   "en": "When complaints spike, I investigate. On November 10, E.Leclerc complaints jumped. I traced them to version 11.0.1: crashes and failed logins, and briefed the team.",
+   "fr": "Quand les plaintes explosent, j'enquête. Le 10 novembre, les plaintes sur E.Leclerc ont bondi. J'ai remonté la piste jusqu'à la version 11.0.1 : plantages et connexions impossibles, et j'ai alerté l'équipe.",
+   "tts": "When complaints spike, I investigate. On November 10, E.Leclerc complaints jumped. I traced them to version 11.0.1: crashes and failed logins, and briefed the team."
   },
   {
    "id": "resolve",

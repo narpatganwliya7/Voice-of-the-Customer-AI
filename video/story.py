@@ -130,8 +130,8 @@ def main():
     day_fr = f"Le {d.day} {mois[d.month - 1]}" if d else "Récemment"
     version = c.get("version") or (re.search(r"version (\d[\d.]*\d)", br["headline"]) or [None, None])[1]
     lines = [
-        ("hook", f"{fmt(reviews)} customer reviews. {brands} French brands. Most of them, nobody reads.",
-                 f"{fmt(reviews).replace(',', ' ')} avis clients. {brands} marques françaises. La plupart, personne ne les lit."),
+        ("hook", f"Over {reviews // 1000} thousand customer reviews. {brands} French brands. Most of them, nobody reads.",
+                 f"Plus de {reviews // 1000} 000 avis clients. {brands} marques françaises. La plupart, personne ne les lit."),
         ("problem", "Banks, telecoms, retailers, transport. Customers say exactly what is broken, and the signal gets lost.",
                     "Banques, télécoms, distribution, transport. Les clients disent exactement ce qui ne va pas, et le signal se perd."),
         ("agent", "I'm Écoute, an AI agent. I read every review, minutes after it is posted.",
@@ -140,15 +140,15 @@ def main():
                 "Je classe chacun parmi quinze irritants, et je mesure ce que chacun coûte en étoiles."),
         ("insight", f"At {best['name']}, {TOPIC_EN.get(top['aspect'], topic_en)} cost {top['stars_lost']:.2f} stars. Fix half of them, and the rating climbs from {avg:.2f} to {after:.2f}.",
                     f"Chez {best['name']}, {TOPIC_FR.get(top['aspect'], top['label'])} coûtent {fr_num(top['stars_lost'])} étoile. Corrigez-en la moitié, et la note passe de {fr_num(avg)} à {fr_num(after)}."),
-        ("investigate", f"When complaints spike, I investigate. {day_en}, {c['brand']} complaints jumped. I traced them to app version {version}: crashes and failed logins. Then I briefed the team that can fix it."
+        ("investigate", f"When complaints spike, I investigate. {day_en}, {c['brand']} complaints jumped. I traced them to version {version}: crashes and failed logins, and briefed the team."
                         if version else f"When complaints spike, I investigate: I query the data, read the reviews, and brief the team that can fix it.",
-                        f"Quand les plaintes explosent, j'enquête. {day_fr}, les plaintes sur {c['brand']} ont bondi. J'ai remonté la piste jusqu'à la version {version} : plantages et connexions impossibles. Puis j'ai alerté l'équipe qui peut corriger."
+                        f"Quand les plaintes explosent, j'enquête. {day_fr}, les plaintes sur {c['brand']} ont bondi. J'ai remonté la piste jusqu'à la version {version} : plantages et connexions impossibles, et j'ai alerté l'équipe."
                         if version else "Quand les plaintes explosent, j'enquête : j'interroge les données, je lis les avis, et j'alerte l'équipe qui peut corriger."),
         ("resolve", "Fix what customers actually feel, and angry reviews turn into loyal ones.",
                     "Corrigez ce que les clients ressentent vraiment, et les avis en colère deviennent des avis fidèles."),
         ("cta", "Écoute. Every review, heard.", "Écoute. Chaque avis, entendu."),
     ]
-    script = {"voice": "af_heart", "speed": 1.05, "lang_code": "a",
+    script = {"voice": "af_heart", "speed": 1.1, "lang_code": "a",
               "lines": [{"id": i, "en": en, "fr": fr, "tts": en.replace("Écoute", "[Écoute](/eɪkˈuːt/)")}
                         for i, en, fr in lines]}
     out = Path(args.out)
