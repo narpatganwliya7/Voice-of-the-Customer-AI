@@ -28,8 +28,8 @@ def norm(w: str) -> str:
     return NUM.get(w, w)
 
 
-def load(path: str) -> np.ndarray:
-    p = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-ac", "1", "-ar", str(SR), "-f", "f32le", "pipe:1"], capture_output=True, check=True)
+def load(path: str, sr: int = SR) -> np.ndarray:
+    p = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-ac", "1", "-ar", str(sr), "-f", "f32le", "pipe:1"], capture_output=True, check=True)
     return np.frombuffer(p.stdout, dtype=np.float32).copy()
 
 
@@ -46,7 +46,7 @@ def main():
 
     model = WhisperModel(args.model, device="cpu", compute_type="int8")
     prompt = " ".join(l["en"] for l in lines)
-    segs, _ = model.transcribe(args.audio, language="en", word_timestamps=True, initial_prompt=prompt, vad_filter=False, beam_size=5)
+    segs, _ = model.transcribe(load(args.audio, 16000), language="en", word_timestamps=True, initial_prompt=prompt, vad_filter=False, beam_size=5)
     heard = [(w.word.strip(), w.start, w.end) for s in segs for w in (s.words or []) if w.word.strip()]
     print("Heard:", " ".join(w for w, _, _ in heard))
 
