@@ -1,15 +1,26 @@
 name: Video narration
 
-# Generates the launch video's narration with Kokoro, a free open-source TTS model.
+# Generates the launch video's narration.
+#   elevenlabs: natural voices (incl. English with a French accent), free plan, key in ELEVENLABS_API_KEY
+#   kokoro:     free open-source model, no account
 on:
   workflow_dispatch:
     inputs:
+      engine:
+        description: "Voice engine"
+        type: choice
+        options: [elevenlabs, kokoro]
+        default: elevenlabs
       voice:
-        description: "Kokoro voice for the full narration (e.g. am_michael, bm_george)"
+        description: "Voice id for the full narration (ElevenLabs voice id, or a Kokoro voice like am_michael)"
         default: ""
       samples:
-        description: "Instead of the narration, one short sample per voice (separate voices with ;)"
+        description: "Instead of the narration: one short sample per voice (ids separated by ;), or 'all' for every voice you added"
         default: ""
+      list:
+        description: "Only list the voices in the ElevenLabs account"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -27,19 +38,30 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng
-      - run: pip install --extra-index-url https://download.pytorch.org/whl/cpu "torch==2.*" kokoro soundfile numpy pandas
+      - name: Install
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg espeak-ng
+          pip install soundfile numpy requests
+          if [ "${{ inputs.engine }}" = "kokoro" ]; then
+            pip install --extra-index-url https://download.pytorch.org/whl/cpu "torch==2.*" kokoro pandas
+          fi
       - run: bash scripts/databranch.sh open
       - name: Generate
         env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ENGINE: ${{ inputs.engine }}
           VOICE: ${{ inputs.voice }}
           SAMPLES: ${{ inputs.samples }}
+          LIST: ${{ inputs.list }}
         run: |
-          if [ -n "$SAMPLES" ]; then
-            python video/tts.py --samples "$SAMPLES" --out store/video/samples
+          if [ "$LIST" = "true" ]; then
+            python video/tts.py --engine "$ENGINE" --list
+          elif [ -n "$SAMPLES" ]; then
+            python video/tts.py --engine "$ENGINE" --samples "$SAMPLES" --out store/video/samples
           else
-            python video/tts.py --out store/video/voice ${VOICE:+--voice "$VOICE"}
+            python video/tts.py --engine "$ENGINE" --out store/video/voice ${VOICE:+--voice "$VOICE"}
           fi
       - name: Save to the data branch
+        if: ${{ !inputs.list }}
         run: |
           bash scripts/databranch.sh save "data: video narration (run ${{ github.run_id }})"

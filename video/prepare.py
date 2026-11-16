@@ -12,8 +12,8 @@ import numpy as np
 import soundfile as sf
 
 FPS = 30
-LEAD = 0.25   # seconds of picture before the voice starts in each scene
-TAIL = 0.45   # seconds after the voice ends
+LEAD = 0.3    # seconds of picture before the voice starts in each scene
+TAIL = 0.4    # seconds after the voice ends
 
 
 def chunks(text: str, max_len: int = 46) -> list[str]:
@@ -32,14 +32,13 @@ def chunks(text: str, max_len: int = 46) -> list[str]:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--bundle", required=True)
+    ap.add_argument("--bundle", default=None, help="unused, kept for compatibility")
     ap.add_argument("--script", default="video/script.json")
     ap.add_argument("--voice", required=True, help="folder with timings.json and line_XX.wav")
     ap.add_argument("--project", required=True)
     ap.add_argument("--story", required=True, help="story.json: chosen insight brand, agent case, quotes")
     args = ap.parse_args()
 
-    bundle = json.loads(Path(args.bundle).read_text())
     script = json.loads(Path(args.script).read_text())
     story = json.loads(Path(args.story).read_text())
     voice_dir = Path(args.voice)
@@ -51,9 +50,10 @@ def main():
     for line, tm in zip(script["lines"], timings["lines"]):
         dur = tm["duration"]
         start = t
-        tail = 2.8 if line is script["lines"][-1] else TAIL  # let the end card breathe
+        tail = 2.6 if line is script["lines"][-1] else TAIL  # let the end card breathe
         frames = int(round((LEAD + dur + tail) * FPS))
-        scenes.append({"id": line["id"], "start": int(round(start * FPS)), "frames": frames})
+        words = [{"w": w["w"], "f": int(round((LEAD + w["s"]) * FPS))} for w in tm.get("words", [])]
+        scenes.append({"id": line["id"], "start": int(round(start * FPS)), "frames": frames, "words": words})
         v0 = start + LEAD
         cs = chunks(line["fr"])
         total = sum(len(c) for c in cs)
@@ -88,7 +88,6 @@ def main():
     data = {
         "fps": FPS, "frames": int(round(total_s * FPS)),
         "scenes": scenes, "captions": captions, "levels": [round(float(x), 3) for x in levels],
-        "stats": {"reviews": bundle["overview"]["reviews"], "brands": bundle["overview"]["brands"]},
         **story,
     }
     Path(args.project, "src", "data.json").write_text(json.dumps(data, ensure_ascii=False))

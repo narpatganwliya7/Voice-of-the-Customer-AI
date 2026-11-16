@@ -1,55 +1,60 @@
 {
- "voice": "af_heart",
- "speed": 1.1,
- "lang_code": "a",
+ "voice": "am_michael",
+ "speed": 0.95,
  "lines": [
   {
    "id": "hook",
-   "en": "Over 127 thousand customer reviews. 41 French brands. Most of them, nobody reads.",
-   "fr": "Plus de 127 000 avis clients. 41 marques françaises. La plupart, personne ne les lit.",
-   "tts": "Over 127 thousand customer reviews. 41 French brands. Most of them, nobody reads."
+   "en": "Every day, customers tell French brands exactly what's broken. Most of it is never read.",
+   "fr": "Chaque jour, les clients disent aux marques françaises ce qui ne va pas. La plupart du temps, personne ne lit.",
+   "tts": "Every day, customers tell French brands exactly what's broken. Most of it is never read."
   },
   {
-   "id": "problem",
-   "en": "Banks, telecoms, retailers, transport. Customers say exactly what is broken, and the signal gets lost.",
-   "fr": "Banques, télécoms, distribution, transport. Les clients disent exactement ce qui ne va pas, et le signal se perd.",
-   "tts": "Banks, telecoms, retailers, transport. Customers say exactly what is broken, and the signal gets lost."
+   "id": "intro",
+   "en": "So I designed an AI agent: Écoute.",
+   "fr": "Alors j'ai conçu un agent IA : Écoute.",
+   "tts": "So I designed an AI agent: [Écoute](/Akˈut/)."
   },
   {
-   "id": "agent",
-   "en": "I'm Écoute, an AI agent. I read every review, minutes after it is posted.",
-   "fr": "Je suis Écoute, un agent IA. Je lis chaque avis, quelques minutes après sa publication.",
-   "tts": "I'm [Écoute](/eɪkˈuːt/), an AI agent. I read every review, minutes after it is posted."
+   "id": "scope",
+   "en": "It reads every new review from forty-one brands, like BNP Paribas, Orange, Decathlon and Deliveroo.",
+   "fr": "Il lit chaque nouvel avis de 41 marques, comme BNP Paribas, Orange, Decathlon et Deliveroo.",
+   "tts": "It reads every new review from forty-one brands, like B N P [Paribas](/pˌɛɹibˈɑ/), Orange, [Decathlon](/dˌAkætlˈɔn/) and Deliveroo."
   },
   {
-   "id": "how",
-   "en": "I sort each one into fifteen pain points, and measure what each one costs in stars.",
-   "fr": "Je classe chacun parmi quinze irritants, et je mesure ce que chacun coûte en étoiles.",
-   "tts": "I sort each one into fifteen pain points, and measure what each one costs in stars."
+   "id": "understand",
+   "en": "It sorts each one into fifteen pain points, and measures what each costs in stars.",
+   "fr": "Il classe chaque avis parmi quinze irritants, et mesure ce que chacun coûte en étoiles.",
+   "tts": "It sorts each one into fifteen pain points, and measures what each costs in stars."
   },
   {
-   "id": "insight",
-   "en": "At Deliveroo, delivery problems cost 0.43 stars. Fix half of them, and the rating climbs from 2.49 to 2.70.",
-   "fr": "Chez Deliveroo, les livraisons coûtent 0,43 étoile. Corrigez-en la moitié, et la note passe de 2,49 à 2,70.",
-   "tts": "At Deliveroo, delivery problems cost 0.43 stars. Fix half of them, and the rating climbs from 2.49 to 2.70."
+   "id": "deliveroo",
+   "en": "Here's what we found. At Deliveroo, delivery problems hit 39 percent of reviews, and cost nearly half a star.",
+   "fr": "Voici ce que nous avons trouvé. Chez Deliveroo, les problèmes de livraison touchent 39 % des avis, et coûtent près d'une demi-étoile.",
+   "tts": "Here's what we found. At Deliveroo, delivery problems hit 39 percent of reviews, and cost nearly half a star."
   },
   {
-   "id": "investigate",
-   "en": "When complaints spike, I investigate. On November 10, E.Leclerc complaints jumped. I traced them to version 11.0.1: crashes and failed logins, and briefed the team.",
-   "fr": "Quand les plaintes explosent, j'enquête. Le 10 novembre, les plaintes sur E.Leclerc ont bondi. J'ai remonté la piste jusqu'à la version 11.0.1 : plantages et connexions impossibles, et j'ai alerté l'équipe.",
-   "tts": "When complaints spike, I investigate. On November 10, E.Leclerc complaints jumped. I traced them to version 11.0.1: crashes and failed logins, and briefed the team."
+   "id": "leclerc",
+   "en": "At E.Leclerc, complaints jumped seven-fold in one day. The agent traced them to an app update: crashes and failed logins.",
+   "fr": "Chez E.Leclerc, les plaintes ont été multipliées par sept en un jour. L'agent a trouvé la cause : une mise à jour, avec plantages et connexions impossibles.",
+   "tts": "At [E.Leclerc](/ˌi ləklˈɛɹ/), complaints jumped seven-fold in one day. The agent traced them to an app update: crashes and failed logins."
   },
   {
-   "id": "resolve",
-   "en": "Fix what customers actually feel, and angry reviews turn into loyal ones.",
-   "fr": "Corrigez ce que les clients ressentent vraiment, et les avis en colère deviennent des avis fidèles.",
-   "tts": "Fix what customers actually feel, and angry reviews turn into loyal ones."
+   "id": "actions",
+   "en": "What they could do: E.Leclerc, ship a hotfix and test logins before each release. Deliveroo, fix deliveries first.",
+   "fr": "Ce qu'ils pourraient faire : E.Leclerc, publier un correctif et tester la connexion avant chaque version. Deliveroo, corriger d'abord les livraisons.",
+   "tts": "What they could do: [E.Leclerc](/ˌi ləklˈɛɹ/), ship a hotfix and test logins before each release. Deliveroo, fix deliveries first."
+  },
+  {
+   "id": "improve",
+   "en": "Fix half of those delivery problems, and the rating could rise from 2.5 to 2.7 stars.",
+   "fr": "Corrigez la moitié de ces problèmes de livraison, et la note pourrait passer de 2,5 à 2,7 étoiles.",
+   "tts": "Fix half of those delivery problems, and the rating could rise from 2.5 to 2.7 stars."
   },
   {
    "id": "cta",
    "en": "Écoute. Every review, heard.",
    "fr": "Écoute. Chaque avis, entendu.",
-   "tts": "[Écoute](/eɪkˈuːt/). Every review, heard."
+   "tts": "[Écoute](/Akˈut/). Every review, heard."
   }
  ]
 }
