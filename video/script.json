@@ -28,9 +28,9 @@
   },
   {
    "id": "deliveroo",
-   "en": "Here's what we found. At Deliveroo, delivery problems hit 39 percent of reviews, and cost nearly half a star.",
-   "fr": "Voici ce que nous avons trouvé. Chez Deliveroo, les problèmes de livraison touchent 39 % des avis, et coûtent près d'une demi-étoile.",
-   "tts": "Here's what we found. At Deliveroo, delivery problems hit 39 percent of reviews, and cost nearly half a star."
+   "en": "Here's what we found. Deliveroo shows 4.4 stars on Google Play, but recent reviews average just 2.5. Delivery problems alone cost nearly half a star.",
+   "fr": "Voici ce que nous avons trouvé. Deliveroo affiche 4,4 étoiles sur Google Play, mais les avis récents donnent à peine 2,5. Les problèmes de livraison coûtent à eux seuls près d'une demi-étoile.",
+   "tts": "Here's what we found. Deliveroo shows 4.4 stars on Google Play, but recent reviews average just 2.5. Delivery problems alone cost nearly half a star."
   },
   {
    "id": "leclerc",
@@ -46,9 +46,9 @@
   },
   {
    "id": "improve",
-   "en": "Fix half of those delivery problems, and the rating could rise from 2.5 to 2.7 stars.",
-   "fr": "Corrigez la moitié de ces problèmes de livraison, et la note pourrait passer de 2,5 à 2,7 étoiles.",
-   "tts": "Fix half of those delivery problems, and the rating could rise from 2.5 to 2.7 stars."
+   "en": "Fix the problems Écoute found, and E.Leclerc's recent rating could climb from 3.4 to 4.2 stars.",
+   "fr": "Corrigez les problèmes trouvés par Écoute, et la note récente d'E.Leclerc pourrait passer de 3,4 à 4,2 étoiles.",
+   "tts": "Fix the problems [Écoute](/Akˈut/) found, and [E.Leclerc](/ˌi ləklˈɛɹ/)'s recent rating could climb from 3.4 to 4.2 stars."
   },
   {
    "id": "cta",

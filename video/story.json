@@ -311,6 +311,7 @@
  "deliveroo": {
   "avg": 2.49,
   "after": 2.7,
+  "store": 4.4345174,
   "prevalence": 0.3929,
   "topic": "Orders & delivery",
   "drivers": [
@@ -497,6 +498,30 @@
    "tone": 2
   }
  ],
+ "improve": {
+  "brand": "E.Leclerc",
+  "avg": 3.38,
+  "after": 4.16,
+  "store": 4.5886154,
+  "topics": 8,
+  "praise": [
+   {
+    "r": 5,
+    "t": "Bonne application, garde le ticket, indique les promotions, les catalogues tout ce dont le client a besoin.",
+    "src": "App Store"
+   },
+   {
+    "r": 5,
+    "t": "il n'y a pas de catalogue qui s'affiche. sinon fonctionne bien. je remets 5 etoile lorsque tout est regle.…",
+    "src": "Google Play"
+   },
+   {
+    "r": 5,
+    "t": "Bonne application et un grand merci pour les 60e crédité sur mon compte grâce à l'achat de mes lunettes de…",
+    "src": "Google Play"
+   }
+  ]
+ },
  "trend": {
   "brand": "Doctolib",
   "points": [

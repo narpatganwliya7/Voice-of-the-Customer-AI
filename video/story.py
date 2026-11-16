@@ -113,7 +113,19 @@ def main():
          "tag": f"{dv['drivers'][1]['stars_lost']:.2f}★ at stake", "tone": 2},
     ]
 
-    # 4. a real rising trend for the background: the brand whose weekly rating rose most
+    # 4. the improvement: E.Leclerc if the complaint topics Écoute found stopped (regression estimate, upper bound)
+    lc = brands["E.Leclerc"]
+    lc_after = round(lc["avg_rating"] + lc["potential"], 2)
+    good_lc = con.execute("""
+        select r.rating, r.text, r.source from r join s using (review_id)
+        where r.brand = 'E.Leclerc' and r.rating = 5 and s.sentiment = 'positive'
+          and length(r.text) between 45 and 140 and regexp_matches(lower(r.text), 'appli|rapide|pratique|simple|fonctionne')
+        order by r."at" desc limit 30""").fetchall()
+    praise_lc = sorted([{"r": x[0], "t": clean(x[1], 110), "src": src(x[2])} for x in good_lc if not RUDE.search(x[1]) and "[" not in x[1]], key=lambda q: -len(q["t"]))[:3]
+    improve = {"brand": "E.Leclerc", "avg": lc["avg_rating"], "after": lc_after, "store": lc.get("store_rating"),
+               "topics": len(lc["drivers"]), "praise": praise_lc}
+
+    # 5. a real rising trend for the background: the brand whose weekly rating rose most
     trend, rise = {}, 0.0
     for x in b["brands"]:
         wk = [w for w in x["weekly"] if w["r"] is not None and w["n"] >= 15]
@@ -133,7 +145,7 @@ def main():
         "wall": wall,
         "sectors": [{"name": k, "brands": v} for k, v in sorted(sectors.items(), key=lambda kv: -len(kv[1]))],
         "named": ["BNP Paribas", "Orange", "Decathlon", "Deliveroo"],
-        "deliveroo": {"avg": avg, "after": after, "prevalence": top["prevalence"], "topic": top["label"],
+        "deliveroo": {"avg": avg, "after": after, "store": dv.get("store_rating"), "prevalence": top["prevalence"], "topic": top["label"],
                       "drivers": [{"label": d["label"], "lost": d["stars_lost"], "share": d["prevalence"]} for d in dv["drivers"][:4]],
                       "scan": {"r": scan["rating"], "t": clean(scan["text"], 150), "src": src(scan["source"]), "day": scan["day"]} if scan else None,
                       "praise": [{"r": q["rating"], "t": clean(q["text"], 110), "src": src(q["source"])} for q in praise][:3]},
@@ -141,11 +153,12 @@ def main():
                     "usual": base, "ratio": round(peak / base, 1), "version": version, "reviews": int(total_leclerc),
                     "read": n_read, "evidence": evidence, "confidence": case["brief"]["confidence"]},
         "actions": actions,
+        "improve": improve,
         "trend": trend,
     }
 
     pct = round(top["prevalence"] * 100)
-    fr_avg, fr_after = f"{avg:.1f}".replace(".", ","), f"{after:.1f}".replace(".", ",")
+    fr = lambda x: f"{x:.1f}".replace(".", ",")
     lines = [
         ("hook", "Every day, customers tell French brands exactly what's broken. Most of it is never read.",
                  "Chaque jour, les clients disent aux marques françaises ce qui ne va pas. La plupart du temps, personne ne lit."),
@@ -154,14 +167,14 @@ def main():
                   "Il lit chaque nouvel avis de 41 marques, comme BNP Paribas, Orange, Decathlon et Deliveroo."),
         ("understand", "It sorts each one into fifteen pain points, and measures what each costs in stars.",
                        "Il classe chaque avis parmi quinze irritants, et mesure ce que chacun coûte en étoiles."),
-        ("deliveroo", f"Here's what we found. At Deliveroo, delivery problems hit {pct} percent of reviews, and cost nearly half a star.",
-                      f"Voici ce que nous avons trouvé. Chez Deliveroo, les problèmes de livraison touchent {pct} % des avis, et coûtent près d'une demi-étoile."),
+        ("deliveroo", f"Here's what we found. Deliveroo shows {dv['store_rating']:.1f} stars on Google Play, but recent reviews average just {avg:.1f}. Delivery problems alone cost nearly half a star.",
+                      f"Voici ce que nous avons trouvé. Deliveroo affiche {fr(dv['store_rating'])} étoiles sur Google Play, mais les avis récents donnent à peine {fr(avg)}. Les problèmes de livraison coûtent à eux seuls près d'une demi-étoile."),
         ("leclerc", "At E.Leclerc, complaints jumped seven-fold in one day. The agent traced them to an app update: crashes and failed logins.",
                     "Chez E.Leclerc, les plaintes ont été multipliées par sept en un jour. L'agent a trouvé la cause : une mise à jour, avec plantages et connexions impossibles."),
         ("actions", "What they could do: E.Leclerc, ship a hotfix and test logins before each release. Deliveroo, fix deliveries first.",
                     "Ce qu'ils pourraient faire : E.Leclerc, publier un correctif et tester la connexion avant chaque version. Deliveroo, corriger d'abord les livraisons."),
-        ("improve", f"Fix half of those delivery problems, and the rating could rise from {avg:.1f} to {after:.1f} stars.",
-                    f"Corrigez la moitié de ces problèmes de livraison, et la note pourrait passer de {fr_avg} à {fr_after} étoiles."),
+        ("improve", f"Fix the problems Écoute found, and E.Leclerc's recent rating could climb from {lc['avg_rating']:.1f} to {lc_after:.1f} stars.",
+                    f"Corrigez les problèmes trouvés par Écoute, et la note récente d'E.Leclerc pourrait passer de {fr(lc['avg_rating'])} à {fr(lc_after)} étoiles."),
         ("cta", "Écoute. Every review, heard.", "Écoute. Chaque avis, entendu."),
     ]
     assert abs(peak / base - 7) < 1, f"spike ratio changed: {peak / base:.1f}"  # the narration says seven-fold

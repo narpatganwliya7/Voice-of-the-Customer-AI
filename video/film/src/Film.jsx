@@ -31,7 +31,7 @@ function Hook({ s }) {
   const cam = { position: [0, 2.2, 10.2], fov: 30, look: [0, 1.55, 0] };
   const proj = projector(cam, W, stageH);
   const crowd = [CROWD[0], CROWD[1], CROWD[2], CROWD[3], CROWD[4], CROWD[5], CROWD[6]];
-  const popAt = (i) => sp(f + 14 - [0, 3, 1, 5, 2, 7, 4][i] * 4, fps, 12, 0.8);
+  const popAt = (i) => sp(f + 40 - [0, 3, 1, 5, 2, 7, 4][i] * 3, fps, 12, 0.8);
   return (
     <AbsoluteFill>
       <Glow items={[{ x: W * 0.5, y: H * 0.86, r: 420, c: C.r1, o: 0.13 }, { x: W * 0.1, y: H * 0.2, r: 300, c: C.r2, o: 0.08 }]} />
@@ -245,9 +245,12 @@ function Deliveroo({ s }) {
   return (
     <AbsoluteFill>
       <Glow items={[{ x: W * 0.3, y: H * 0.55, r: 380, c: C.r1, o: 0.1 }]} />
-      <Headline appear={head} size={118} sub={`Stars lost per pain point, last ${60} days`}>Deliveroo</Headline>
-      <div style={{ position: "absolute", left: 72, top: 318, opacity: head }}>
-        <Pill size={24}><span style={{ color: C.r2 }}>★</span> {D.avg.toFixed(2)} average rating</Pill>
+      <Headline appear={head} size={118} sub="Stars lost per pain point, last 60 days">Deliveroo</Headline>
+      <div style={{ position: "absolute", left: 72, top: 300, opacity: head, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 10 }}>
+        <Pill size={23}><span style={{ color: C.r5 }}>★</span> {D.store.toFixed(1)} on Google Play, all-time</Pill>
+        <Pill size={23} bg={mix(C.r1, "#ffffff", 0.88)} color={C.r1} border={mix(C.r1, "#ffffff", 0.6)} style={{ opacity: interpolate(f, [20, 34], [0, 1], clamp) }}>
+          ★ {D.avg.toFixed(2)} in reviews from the last 60 days
+        </Pill>
       </div>
       <div style={{ position: "absolute", right: 64, top: 70, width: 240, textAlign: "center", opacity: head }}>
         <svg width="220" height="220" viewBox="0 0 220 220">
@@ -426,7 +429,7 @@ function TrendBg({ appear }) {
 function Improve({ s }) {
   const f = useCurrentFrame();
   const { width: W, height: H, fps } = useVideoConfig();
-  const D = data.deliveroo;
+  const D = data.improve;
   const v = interpolate(f, [18, s.frames * 0.75], [D.avg, D.after], { ...clamp, easing: Easing.inOut(Easing.cubic) });
   const head = sp(f, fps, 18);
   const stageTop = 300, stageH = 860;
@@ -444,7 +447,7 @@ function Improve({ s }) {
         <div style={{ font: `800 140px/0.9 ${F.display}`, letterSpacing: "-0.05em", color: C.ink, fontVariantNumeric: "tabular-nums" }}>
           {D.avg.toFixed(2)} <span style={{ color: C.ink3, fontWeight: 500 }}>→</span> <span style={{ color: mix(C.r3, C.r5, (v - D.avg) / (D.after - D.avg)) }}>{v.toFixed(2)}</span>
         </div>
-        <div style={{ font: `500 32px/1.3 ${F.body}`, color: C.ink2, marginTop: 16, maxWidth: 820 }}>Deliveroo's estimated rating if half of the delivery problems are fixed</div>
+        <div style={{ font: `500 30px/1.3 ${F.body}`, color: C.ink2, marginTop: 16, maxWidth: 900 }}>{D.brand}'s estimated recent rating if the {D.topics} complaint topics Écoute found stopped. Store rating: {D.store.toFixed(1)}★ all-time.</div>
       </div>
       <div style={{ position: "absolute", left: 0, top: stageTop }}>
         <Stage width={W} height={stageH} cam={cam} shadow={0.18} clipping>
