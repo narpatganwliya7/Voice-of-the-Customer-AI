@@ -9,7 +9,7 @@ on:
       engine:
         description: "Voice engine"
         type: choice
-        options: [elevenlabs, kokoro]
+        options: [elevenlabs, kokoro, align]
         default: elevenlabs
       voice:
         description: "Voice id for the full narration (ElevenLabs voice id, or a Kokoro voice like am_michael)"
@@ -17,6 +17,9 @@ on:
       samples:
         description: "Instead of the narration: one short sample per voice (ids separated by ;), or 'all' for every voice you added"
         default: ""
+      source:
+        description: "align: a recording already on the data branch, cut into script lines"
+        default: "video/narration_source.mp3"
       model:
         description: "ElevenLabs model id (default eleven_multilingual_v2)"
         default: "eleven_multilingual_v2"
@@ -45,6 +48,7 @@ jobs:
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg espeak-ng
           pip install soundfile numpy requests
+          if [ "${{ inputs.engine }}" = "align" ]; then pip install faster-whisper; fi
           if [ "${{ inputs.engine }}" = "kokoro" ]; then
             pip install --extra-index-url https://download.pytorch.org/whl/cpu "torch==2.*" kokoro pandas
           fi
@@ -58,7 +62,9 @@ jobs:
           LIST: ${{ inputs.list }}
           MODEL: ${{ inputs.model || 'eleven_multilingual_v2' }}
         run: |
-          if [ "$LIST" = "true" ]; then
+          if [ "$ENGINE" = "align" ]; then
+            python video/align_voice.py "store/${{ inputs.source }}" --out store/video/voice
+          elif [ "$LIST" = "true" ]; then
             python video/tts.py --engine "$ENGINE" --list
           elif [ -n "$SAMPLES" ]; then
             python video/tts.py --engine "$ENGINE" --model "$MODEL" --samples "$SAMPLES" --out store/video/samples

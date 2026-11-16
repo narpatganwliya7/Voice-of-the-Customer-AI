@@ -30,6 +30,33 @@ def silences(path: str, noise_db: int = -38, min_d: float = 0.55) -> list[tuple[
     return list(zip(starts, ends))
 
 
+def choose_cuts(gaps, chars, total):
+    """Pick the N-1 pauses that best split the audio in proportion to each line's length,
+    preferring longer pauses (dynamic programming over the candidate pauses)."""
+    n = len(chars) - 1
+    speech = total - sum(b - a for a, b in gaps) * 0.5
+    cum = [sum(chars[: k + 1]) / sum(chars) for k in range(n)]
+    target = [c * total for c in cum]
+    G = len(gaps)
+    INF = float("inf")
+    cost = [[INF] * G for _ in range(n)]
+    back = [[-1] * G for _ in range(n)]
+    for j, (a, b) in enumerate(gaps):
+        cost[0][j] = abs((a + b) / 2 - target[0]) / total - 0.6 * (b - a) / max(1e-6, speech) * 10
+    for k in range(1, n):
+        for j, (a, b) in enumerate(gaps):
+            here = abs((a + b) / 2 - target[k]) / total - 0.6 * (b - a) / max(1e-6, speech) * 10
+            best = min(((cost[k - 1][i], i) for i in range(j)), default=(INF, -1))
+            if best[0] < INF:
+                cost[k][j], back[k][j] = best[0] + here, best[1]
+    j = min(range(G), key=lambda x: cost[n - 1][x])
+    picked = []
+    for k in range(n - 1, -1, -1):
+        picked.append(gaps[j])
+        j = back[k][j]
+    return picked[::-1]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("audio")
@@ -39,10 +66,10 @@ def main():
     lines = json.loads(Path(args.script).read_text())["lines"]
     audio = load(args.audio)
     total = len(audio) / SR
-    gaps = [g for g in silences(args.audio) if g[0] > 0.2 and g[1] < total - 0.2]
+    gaps = [g for g in silences(args.audio, min_d=0.25) if g[0] > 0.2 and g[1] < total - 0.2]
     if len(gaps) < len(lines) - 1:
-        raise SystemExit(f"Found {len(gaps)} pauses, need {len(lines) - 1}: keep the <break> tags and use Multilingual v2")
-    cuts = sorted(sorted(gaps, key=lambda g: g[1] - g[0], reverse=True)[: len(lines) - 1])
+        raise SystemExit(f"Found {len(gaps)} pauses, need {len(lines) - 1}: leave a pause between the lines")
+    cuts = choose_cuts(gaps, [len(l["en"]) for l in lines], total)
     bounds = [0.0] + [(a + b) / 2 for a, b in cuts] + [total]
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
