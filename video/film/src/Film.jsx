@@ -498,6 +498,7 @@ function End({ s }) {
             {["Python", "SQL", "Machine learning", "AI agents", "GitHub Actions"].map((t) => <Pill key={t} size={22}>{t}</Pill>)}
           </div>
           <div style={{ font: `600 26px ${F.body}`, color: C.cobalt, marginTop: 22 }}>github.com/narpatganwliya7/Voice-of-the-Customer-AI</div>
+          <div style={{ font: `500 19px/1.35 ${F.body}`, color: C.ink3, marginTop: 14, padding: "0 90px" }}>Independent portfolio project, not affiliated with or endorsed by the brands shown. Based on public app reviews; estimates come from a statistical model. Voice: ElevenLabs.</div>
         </div>
       </div>
     </AbsoluteFill>

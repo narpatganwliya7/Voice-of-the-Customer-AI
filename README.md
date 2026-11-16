@@ -143,4 +143,9 @@ the same pipeline answers the same questions: what hurts, how much, since when, 
 
 ---
 
+**Disclaimer.** Independent portfolio project, not affiliated with or endorsed by any brand named here.
+Brand names only identify the apps whose public reviews were analysed; no logos are used. Quotes are
+short, anonymous and stripped of personal data. Figures marked as estimates come from a statistical
+model, not from the companies. A brand that wants its name removed can open an issue.
+
 Built by **Narpat Ganwliya** · Python · SQL · machine learning · AI agents · GitHub Actions

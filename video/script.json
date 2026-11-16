@@ -34,9 +34,9 @@
   },
   {
    "id": "leclerc",
-   "en": "At E.Leclerc, complaints jumped seven-fold in one day. The agent traced them to an app update: crashes and failed logins.",
-   "fr": "Chez E.Leclerc, les plaintes ont été multipliées par sept en un jour. L'agent a trouvé la cause : une mise à jour, avec plantages et connexions impossibles.",
-   "tts": "At [E.Leclerc](/ˌi ləklˈɛɹ/), complaints jumped seven-fold in one day. The agent traced them to an app update: crashes and failed logins."
+   "en": "At E.Leclerc, complaints jumped seven-fold in one day. In the reviews, the agent traced them to an app update: crashes and failed logins.",
+   "fr": "Chez E.Leclerc, les plaintes ont été multipliées par sept en un jour. Dans les avis, l'agent les a reliées à une mise à jour : plantages et connexions impossibles.",
+   "tts": "At [E.Leclerc](/ˌi ləklˈɛɹ/), complaints jumped seven-fold in one day. In the reviews, the agent traced them to an app update: crashes and failed logins."
   },
   {
    "id": "actions",
