@@ -17,6 +17,9 @@ on:
       samples:
         description: "Instead of the narration: one short sample per voice (ids separated by ;), or 'all' for every voice you added"
         default: ""
+      model:
+        description: "ElevenLabs model id (default eleven_multilingual_v2)"
+        default: "eleven_multilingual_v2"
       list:
         description: "Only list the voices in the ElevenLabs account"
         type: boolean
@@ -53,13 +56,14 @@ jobs:
           VOICE: ${{ inputs.voice }}
           SAMPLES: ${{ inputs.samples }}
           LIST: ${{ inputs.list }}
+          MODEL: ${{ inputs.model || 'eleven_multilingual_v2' }}
         run: |
           if [ "$LIST" = "true" ]; then
             python video/tts.py --engine "$ENGINE" --list
           elif [ -n "$SAMPLES" ]; then
-            python video/tts.py --engine "$ENGINE" --samples "$SAMPLES" --out store/video/samples
+            python video/tts.py --engine "$ENGINE" --model "$MODEL" --samples "$SAMPLES" --out store/video/samples
           else
-            python video/tts.py --engine "$ENGINE" --out store/video/voice ${VOICE:+--voice "$VOICE"}
+            python video/tts.py --engine "$ENGINE" --model "$MODEL" --out store/video/voice ${VOICE:+--voice "$VOICE"}
           fi
       - name: Save to the data branch
         if: ${{ !inputs.list }}
