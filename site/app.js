@@ -9,7 +9,9 @@ const fmt = {
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const COLOR = { r1: "#EE4136", r2: "#F5862F", r3: "#F2B92A", r4: "#8FC43A", r5: "#19A866", ink: "#14161C", ink2: "#5C6371", ink3: "#9AA0AC", line: "#E4E7ED", cobalt: "#2F4DF5" };
 const RATING = [COLOR.r1, COLOR.r1, COLOR.r2, COLOR.r3, COLOR.r4, COLOR.r5];
-const stars = (r) => `<span class="st" aria-label="${r} out of 5 stars"><span style="color:${RATING[r]}">${"★".repeat(r)}</span><span class="off">${"★".repeat(5 - r)}</span></span>`;
+const STAR = "M12 2.6l2.82 5.92 6.5.83-4.77 4.5 1.21 6.45L12 17.17 6.24 20.3l1.21-6.45-4.77-4.5 6.5-.83z";
+const starSvg = (c) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR}" fill="${c}" stroke="${c}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+const stars = (r) => `<span class="st" role="img" aria-label="${r} out of 5 stars">${[0, 1, 2, 3, 4].map((i) => starSvg(i < r ? RATING[r] : "#DCDFE6")).join("")}</span>`;
 const SECTOR = { banking: "Banking", insurance: "Insurance", telecom: "Telecom", retail: "Retail", mobility: "Mobility", delivery: "Delivery", energy: "Energy", health: "Health" };
 const TEAM_IMG = (team) => {
   const t = (team || "").toLowerCase();
@@ -127,7 +129,7 @@ function explorer() {
     $("exName").textContent = b.name;
     $("exSector").textContent = SECTOR[b.sector] || b.sector;
     $("exRating").innerHTML = `${fmt.s(b.avg_rating, 2)}<span style="color:${RATING[Math.max(1, Math.round(b.avg_rating || 1))]}">★</span> <small>average, last ${B.overview.window_days} days</small>`;
-    $("exWindow").textContent = `${fmt.n(b.reviews)} reviews in the window${b.store_rating ? `; store rating ${fmt.s(b.store_rating, 1)}★ all-time` : ""}`;
+    $("exWindow").textContent = `${fmt.n(b.reviews)} reviews in the window${b.store_rating ? `; Google Play store rating ${fmt.s(b.store_rating, 1)}★` : ""}`;
     $("exKv").innerHTML = [
       ["Negative reviews", fmt.pct(b.negative_share)], ["Say they are leaving", fmt.pct(b.leaving_share, 1)],
       ["Critical (money, access, fraud)", fmt.pct(b.critical_share, 1)], ["Problem after an app update", fmt.pct(b.after_update_share, 1)],

@@ -62,7 +62,7 @@ export function ReviewCard({ r, w = 420, style, dim = 0, big = false }) {
     <div style={{
       width: w, background: C.card, borderRadius: 16, padding: `${w * 0.045}px ${w * 0.055}px ${w * 0.05}px`,
       boxShadow: "0 1px 2px rgba(20,22,28,.06), 0 14px 30px -14px rgba(28,34,52,.26)",
-      filter: dim ? `grayscale(${dim}) blur(${dim * 1.2}px)` : undefined, opacity: 1 - dim * 0.5, ...style,
+      ...style,
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: w * 0.025 }}>
         <StarsInline n={r.r} size={w * 0.058} />

@@ -14,9 +14,10 @@ const sp = (f, fps, d = 16, m = 0.9) => spring({ frame: f, fps, config: { dampin
 const TOPICS = ["App reliability", "Login & access", "Device compatibility", "Speed & performance", "Ease of use & design",
   "Features", "Payments & billing", "Price & fees", "Customer service", "Account management", "Orders & delivery",
   "Core service quality", "Trust & security", "Notifications & ads", "Loyalty & rewards"];
+/* Soft pools of colour from the subject. A radial gradient instead of a blur filter: same look, a fraction of the render cost. */
 const Glow = ({ items }) => items.map((g, i) => (
-  <div key={i} style={{ position: "absolute", left: g.x - g.r, top: g.y - g.r, width: g.r * 2, height: g.r * 2, borderRadius: "50%",
-    background: g.c, opacity: g.o ?? 0.14, filter: "blur(100px)" }} />
+  <div key={i} style={{ position: "absolute", left: g.x - g.r * 1.6, top: g.y - g.r * 1.6, width: g.r * 3.2, height: g.r * 3.2, borderRadius: "50%",
+    background: `radial-gradient(circle, ${g.c} 0%, ${g.c}00 62%)`, opacity: (g.o ?? 0.14) * 0.9 }} />
 ));
 
 /* 1 ─ Hook: a wall of real reviews, angry customers, a counter */
@@ -42,12 +43,13 @@ function Hook({ s }) {
             const items = Array.from({ length: 16 }, (_, i) => wall[(c * 13 + i * 3) % wall.length]);
             return (
               <div key={c} style={{ display: "flex", flexDirection: "column", gap: 24, transform: `translateY(${-300 - (f + 30) * speed}px)` }}>
-                {items.map((r, i) => <ReviewCard key={i} r={r} w={390} dim={dim} />)}
+                {items.map((r, i) => <ReviewCard key={i} r={r} w={390} />)}
               </div>
             );
           })}
         </div>
       </AbsoluteFill>
+      <AbsoluteFill style={{ background: C.paper, opacity: dim * 0.62 }} />
       <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 560, background: `linear-gradient(${C.paper} 55%, rgba(245,246,248,0))` }} />
       <div style={{ position: "absolute", left: 72, top: 70 }}>
         <div style={{ font: `800 176px/0.88 ${F.display}`, letterSpacing: "-0.04em", color: C.ink, fontVariantNumeric: "tabular-nums" }}>{count.toLocaleString("en-US")}</div>
@@ -371,7 +373,7 @@ function Agent({ s }) {
   const view = 700;
   const content = H_.reduce((acc, h, i) => acc + h * app[i], 0);
   const scroll = Math.max(0, content - view + 20);
-  const ev = ramp(f, T.evOut, T.evOut + 18) * (1 - ramp(f, T.evIn - 16, T.evIn + 2, IO));
+  const ev = ramp(f, T.evOut, T.evOut + 14) * (1 - ramp(f, T.evIn - 16, T.evIn + 2, IO));
   const done = f >= T.steps[5];
   const conTop = 336, bodyTop = 92;
 
@@ -493,7 +495,7 @@ function Agent({ s }) {
       </div>
 
       {A.evidence.slice(0, 3).map((t, i) => {
-        const e = ramp(f, T.evOut + [0, 4, 9][i], T.evOut + 20 + [0, 4, 9][i]) * (1 - ramp(f, T.evIn - 16 + i * 2, T.evIn + 2 + i * 2, IO));
+        const e = ramp(f, T.evOut + [0, 3, 7][i], T.evOut + 14 + [0, 3, 7][i]) * (1 - ramp(f, T.evIn - 16 + i * 2, T.evIn + 2 + i * 2, IO));
         if (e <= 0.001) return null;
         const ox = 48 + 28 + 46 + 120, oy = conTop + bodyTop + 22 - scroll + top_[2] + 46 + 31 + 20;
         const tx = [150, 300, 190][i], ty = [470, 640, 815][i];

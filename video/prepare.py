@@ -14,6 +14,7 @@ import soundfile as sf
 FPS = 30
 LEAD = 0.3    # seconds of picture before the voice starts in each scene
 TAIL = 0.4    # seconds after the voice ends
+HOLD = {"agent": 0.9}  # extra seconds of picture after a line, so a finding can be read
 
 
 def chunks(text: str, max_len: int = 46) -> list[str]:
@@ -51,7 +52,7 @@ def main():
     for line, tm in zip(script["lines"], timings["lines"]):
         dur = tm["duration"]
         start = t
-        tail = 2.6 if line is script["lines"][-1] else TAIL  # let the end card breathe
+        tail = 2.6 if line is script["lines"][-1] else TAIL + HOLD.get(line["id"], 0)  # let the end card breathe
         frames = int(round((LEAD + dur + tail) * FPS))
         words = [{"w": w["w"], "f": int(round((LEAD + w["s"]) * FPS))} for w in tm.get("words", [])]
         scenes.append({"id": line["id"], "start": int(round(start * FPS)), "frames": frames, "words": words})

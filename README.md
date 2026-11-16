@@ -124,6 +124,24 @@ Or from GitHub, in the **Actions** tab:
 | **Analyse** | Trains the classifier, scores every review, builds insights, lets the AI analyst investigate, builds the website data. |
 | **Video narration** | Aligns the recorded narration to the script with faster-whisper (word timings drive the cuts and the French subtitles). Kokoro and the ElevenLabs API remain as fallbacks. |
 
+### The film
+
+Every number, quote and agent step in the film is read from the pipeline's outputs; nothing is typed by hand.
+
+```bash
+python video/story.py --store store --out video                 # picks the stories, writes script.json + story.json
+# record script.json in ElevenLabs, then run "Video narration" with engine=align
+python video/prepare.py --voice store/video/voice --project video/film --story video/story.json
+cd video/film && node render_scenes.mjs 2 out/chunks && node cues.mjs public/cues.json
+python video/extend_music.py music.mp3 --seconds 78.6 --out music_long.wav
+python video/mix_audio.py --voice video/film/public/narration.wav --cues video/film/public/cues.json \
+  --music music_long.wav --sfx sfx/ --out soundtrack.wav
+```
+
+Scenes are rendered one file each at 2160×2700 (Remotion, React Three Fiber, software GL), joined
+without re-encoding, then muxed with the mixed soundtrack: voice EQ and compression, the music ducked
+under the voice, small effects on the cuts, two-pass loudness to −14 LUFS.
+
 ## Project layout
 
 ```

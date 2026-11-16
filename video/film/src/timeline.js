@@ -12,11 +12,11 @@ export function agentTimes(s) {
   const t1 = inv + 16;
   const t2 = t1 + 38;
   const t3 = Math.max(t2 + 34, wordAt(s, /^reads/i, t2 + 34) - 8);
-  const evOut = t3 + 16;
-  const evIn = Math.max(evOut + 52, wordAt(s, /^finds/i, evOut + 52) + 6);
-  const t4 = evIn + 6;
-  const t5 = t4 + 30;
-  const t6 = Math.max(t5 + 30, wordAt(s, /^app$/i, t5 + 30) - 4);
+  const evOut = t3 + 20;            // the reviews come out of the "reviews read" line
+  const evIn = Math.max(evOut + 64, wordAt(s, /^finds/i, 0) + 10); // held long enough to read
+  const t4 = evIn - 6;
+  const t5 = t4 + 24;
+  const t6 = Math.max(t5 + 24, wordAt(s, /^app$/i, 0) - 4);
   return { inv, steps: [t1, t2, t3, t4, t5, t6], evOut, evIn };
 }
 

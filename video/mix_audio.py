@@ -125,7 +125,7 @@ def main():
     ap.add_argument("--cues", required=True)
     ap.add_argument("--music")
     ap.add_argument("--sfx")
-    ap.add_argument("--music-under", type=float, default=19.0, help="music loudness below the voice, in LU, before ducking")
+    ap.add_argument("--music-under", type=float, default=14.0, help="music loudness below the voice, in LU, before ducking")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
@@ -150,7 +150,7 @@ def main():
             f"[2:a]aresample=48000,aformat=channel_layouts=stereo,atrim=0:{dur},highpass=f=40,"
             f"equalizer=f=2500:t=q:w=1.5:g=-3,volume={music_db:.2f}dB,"
             f"volume=eval=frame:volume='1+0.7*min(1,max(0,(t-{dur - 5.5:.2f})/1.5))',"  # lift the music for the end card
-            f"afade=t=in:d=1.2,afade=t=out:st={dur - 3.2}:d=3.2[mu];"
+            f"afade=t=in:d=0.8,afade=t=out:st={dur - 1.2}:d=1.2[mu];"
             "[mu][vk]sidechaincompress=threshold=0.02:ratio=7:attack=25:release=450:makeup=1[md]")
         mix += "[md]"
         n = 3

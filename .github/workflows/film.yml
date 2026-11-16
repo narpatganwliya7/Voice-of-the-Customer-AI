@@ -1,0 +1,90 @@
+name: Render film
+
+# Renders the launch film in parallel chunks (Remotion + React Three Fiber on software GL),
+# joins them without re-encoding, and adds the mixed soundtrack from the data branch.
+# Output: an artifact with the 2160x2700 master and a 1080x1350 copy for LinkedIn.
+on:
+  workflow_dispatch:
+    inputs:
+      scale:
+        description: "Render scale (2 = 2160x2700, 1 = 1080x1350)"
+        default: "2"
+      soundtrack:
+        description: "Mixed soundtrack on the data branch"
+        default: "video/audio/soundtrack.flac"
+
+permissions:
+  contents: read
+
+jobs:
+  chunk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    defaults:
+      run:
+        working-directory: video/film
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: video/film/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Frame range
+        id: range
+        run: |
+          node -e '
+            const d = require("./src/data.json"); const n = 12, p = ${{ matrix.part }};
+            const size = Math.ceil(d.frames / n), a = p * size, b = Math.min(d.frames, a + size) - 1;
+            console.log(`a=${a}\nb=${b}`);' >> "$GITHUB_OUTPUT"
+          node -e 'const f="./src/data.json", d=require(f); d.audio=false; require("fs").writeFileSync(f, JSON.stringify(d))'
+      - name: Render
+        run: |
+          npx remotion browser ensure || true
+          npx remotion render src/index.jsx Ecoute "chunk_$(printf %02d ${{ matrix.part }}).mp4" \
+            --frames=${{ steps.range.outputs.a }}-${{ steps.range.outputs.b }} --scale=${{ inputs.scale }} \
+            --muted --crf=17 --gl=swangle --log=error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chunk-${{ matrix.part }}
+          path: video/film/chunk_*.mp4
+          retention-days: 2
+
+  join:
+    needs: chunk
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: bash scripts/databranch.sh open
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: chunk-*
+          path: chunks
+          merge-multiple: true
+      - name: Join, add sound, make the LinkedIn copy
+        run: |
+          ls chunks/chunk_*.mp4 | sort | sed "s|^|file '$PWD/|; s|$|'|" > list.txt
+          ffmpeg -v error -f concat -safe 0 -i list.txt -c copy video_only.mp4
+          ffmpeg -v error -i video_only.mp4 -i "store/${{ inputs.soundtrack }}" -map 0:v -map 1:a -c:v copy \
+            -c:a aac -b:a 256k -ar 48000 -shortest -movflags +faststart ecoute_film_master.mp4
+          ffmpeg -v error -i ecoute_film_master.mp4 -vf "scale=1080:1350:flags=lanczos" -c:v libx264 -preset slow -crf 17 \
+            -pix_fmt yuv420p -c:a copy -movflags +faststart ecoute_film_linkedin_1080x1350.mp4
+          for f in ecoute_film_master.mp4 ecoute_film_linkedin_1080x1350.mp4; do
+            ffprobe -v error -show_entries stream=codec_name,width,height,nb_frames:format=duration,size -of compact "$f"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ecoute-film
+          path: |
+            ecoute_film_master.mp4
+            ecoute_film_linkedin_1080x1350.mp4
+          retention-days: 30
