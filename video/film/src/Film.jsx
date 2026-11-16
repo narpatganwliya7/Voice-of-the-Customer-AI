@@ -302,7 +302,7 @@ function Leclerc({ s }) {
   const steps = [
     { t: `Queried ${L.reviews.toLocaleString("en-US")} E.Leclerc reviews`, at: 0.42 },
     { t: `Read ${L.read} reviews posted around ${L.day.slice(8, 10)} Nov`, at: 0.53 },
-    { t: `Cause found: app version ${L.version}, crash at launch and failed logins`, at: 0.66, key: true },
+    { t: `Reviews point to app version ${L.version}: crash at launch, failed logins`, at: 0.66, key: true },
   ];
   const ev = (i) => sp(f - s.frames * (0.58 + i * 0.07), fps, 14);
   const [sx, sy] = proj(xs[spikeI], hOf(L.peak) * grow(spikeI) + 0.3, 0);
@@ -341,7 +341,7 @@ function Leclerc({ s }) {
             <div style={{ font: `700 32px ${F.display}`, color: C.ink, letterSpacing: "-0.02em" }}>Écoute agent</div>
             <div style={{ marginLeft: "auto" }}>
               {f > s.frames * 0.7
-                ? <Pill size={20} bg={mix(C.r5, "#ffffff", 0.86)} color={C.r5} border={mix(C.r5, "#ffffff", 0.55)}>Cause found</Pill>
+                ? <Pill size={20} bg={mix(C.r5, "#ffffff", 0.86)} color={C.r5} border={mix(C.r5, "#ffffff", 0.55)}>Likely cause found</Pill>
                 : <Pill size={20} bg={C.cobaltSoft} color={C.cobalt} border={mix(C.cobalt, "#ffffff", 0.6)}>Investigating</Pill>}
             </div>
           </div>
