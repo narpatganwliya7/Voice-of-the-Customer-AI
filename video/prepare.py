@@ -37,6 +37,7 @@ def main():
     ap.add_argument("--voice", required=True, help="folder with timings.json and line_XX.wav")
     ap.add_argument("--project", required=True)
     ap.add_argument("--story", required=True, help="story.json: chosen insight brand, agent case, quotes")
+    ap.add_argument("--credits", default="Voice: ElevenLabs.", help="audio credits shown on the end card")
     args = ap.parse_args()
 
     script = json.loads(Path(args.script).read_text())
@@ -87,7 +88,8 @@ def main():
 
     data = {
         "fps": FPS, "frames": int(round(total_s * FPS)),
-        "scenes": scenes, "captions": captions, "levels": [round(float(x), 3) for x in levels],
+        "scenes": scenes, "captions": captions, "levels": [round(float(x), 3) for x in levels], "credits": args.credits,
+        "draft": bool(timings.get("draft")),
         **story,
     }
     Path(args.project, "src", "data.json").write_text(json.dumps(data, ensure_ascii=False))

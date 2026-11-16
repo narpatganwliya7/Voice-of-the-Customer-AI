@@ -22,7 +22,10 @@ export const RATING = [C.r1, C.r1, C.r2, C.r3, C.r4, C.r5];
 export const F = {
   display: "'Bricolage Grotesque', 'Arial Black', sans-serif",
   body: "'Geist', 'Helvetica Neue', Arial, sans-serif",
+  mono: "'Geist Mono', ui-monospace, monospace",
 };
+/* Emil: strong ease-out for entrances, strong ease-in-out for on-screen movement. Never ease-in. */
+export const EASE = { out: [0.23, 1, 0.32, 1], inOut: [0.77, 0, 0.175, 1] };
 
 const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const toHex = (rgb) => "#" + rgb.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
@@ -35,6 +38,7 @@ const faces = [
   ["Bricolage Grotesque", "bricolage-grotesque-latin-ext-standard-normal.woff2", { weight: "200 800", stretch: "75% 100%" }],
   ["Geist", "geist-latin-wght-normal.woff2", { weight: "100 900" }],
   ["Geist", "geist-latin-ext-wght-normal.woff2", { weight: "100 900" }],
+  ["Geist Mono", "geist-mono-latin-wght-normal.woff2", { weight: "100 900" }],
 ];
 
 let loaded = false;

@@ -1,9 +1,10 @@
-import React, { useLayoutEffect, useMemo } from "react";
+import React, { useLayoutEffect, useMemo, useRef } from "react";
 import { ThreeCanvas } from "@remotion/three";
 import { useThree } from "@react-three/fiber";
 import { useCurrentFrame } from "remotion";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { C, mix, moodColor } from "./theme.js";
 
 /* Original clay-style 3D characters and objects for the Écoute film. */
@@ -60,19 +61,34 @@ function LookAt({ target }) {
   return null;
 }
 
+/** Soft studio reflections: a prefiltered room environment lights glossy clay, stars and the mark. */
+function Env({ intensity = 0.55 }) {
+  const { gl, scene } = useThree();
+  useLayoutEffect(() => {
+    const pm = new THREE.PMREMGenerator(gl);
+    const rt = pm.fromScene(new RoomEnvironment(), 0.04);
+    scene.environment = rt.texture;
+    scene.environmentIntensity = intensity;
+    return () => { scene.environment = null; rt.dispose(); pm.dispose(); };
+  }, [gl, scene, intensity]);
+  return null;
+}
+const DPR = typeof window !== "undefined" ? Math.min(2, window.devicePixelRatio || 1) : 1;
+
 /** A transparent 3D stage: the page's white paper shows through, only soft shadows are drawn. */
 export function Stage({ width, height, cam = { position: [0, 2.4, 12], fov: 30, look: [0, 1.4, 0] }, shadow = 0.16, children, clipping = false }) {
   return (
-    <ThreeCanvas width={Math.round(width)} height={Math.round(height)} shadows flat dpr={1}
+    <ThreeCanvas width={Math.round(width)} height={Math.round(height)} shadows flat dpr={DPR}
       gl={{ alpha: true, antialias: true, preserveDrawingBuffer: true }}
       camera={{ position: cam.position, fov: cam.fov, near: 0.1, far: 100 }}
       onCreated={(s) => { if (clipping) s.gl.localClippingEnabled = true; }}>
       <LookAt target={cam.look} />
-      <hemisphereLight args={["#ffffff", "#e2e6ee", 1.25]} />
+      <Env />
+      <hemisphereLight args={["#ffffff", "#e2e6ee", 0.95]} />
       <directionalLight position={[5, 10, 8]} intensity={2.1} castShadow
         shadow-mapSize-width={2048} shadow-mapSize-height={2048}
-        shadow-camera-left={-10} shadow-camera-right={10} shadow-camera-top={10} shadow-camera-bottom={-10}
-        shadow-camera-near={0.5} shadow-camera-far={40} shadow-bias={-0.0004} />
+        shadow-camera-left={-7.5} shadow-camera-right={7.5} shadow-camera-top={8} shadow-camera-bottom={-4}
+        shadow-camera-near={0.5} shadow-camera-far={40} shadow-bias={-0.0003} shadow-normalBias={0.02} />
       <directionalLight position={[-8, 4, 5]} intensity={0.55} color="#e3e9ff" />
       <directionalLight position={[0, 6, -9]} intensity={1.2} color="#ffffff" />
       <mesh rotation-x={-Math.PI / 2} receiveShadow>
@@ -109,17 +125,20 @@ export function Person({ x = 0, z = 0, s = 1, mood = 0, skin = SKINS[0], hair = 
   const jump = happy > 0.5 ? Math.max(0, Math.sin(t * 5.5)) * 0.32 * happy : 0;
   const bob = Math.sin(t * 2.1) * 0.035;
   const shake = angry * Math.sin(t * 26) * 0.03;
-  const sc = s * Math.max(0.001, pop);
+  const p = clamp01(pop);
+  const sc = s * (0.9 + 0.1 * p);
+  const op = clamp01(p * 1.6);
+  const drop = (1 - p) * 0.9;
   const tilt = angry * 0.5;
   const frownS = clamp01((0.5 - m) / 0.25) * (angry > 0.65 ? 0 : 1);
   const shoutS = clamp01((angry - 0.65) / 0.2);
   const smileS = clamp01((m - 0.45) / 0.25);
   const openS = clamp01((m - 0.78) / 0.15);
   const squint = 1 - happy * 0.5;
-  const mat = (color, rough = 0.6) => <meshStandardMaterial color={color} roughness={rough} metalness={0} />;
+  const mat = (color, rough = 0.6) => <meshStandardMaterial color={color} roughness={rough} metalness={0} transparent={op < 1} opacity={op} />;
 
   return (
-    <group position={[x + shake, jump + bob, z]} scale={[sc, sc, sc]} rotation={[0, ry + Math.sin(t * 0.6) * 0.18, 0]}>
+    <group position={[x + shake, jump + bob + drop, z]} scale={[sc, sc, sc]} visible={op > 0.01} rotation={[0, ry + Math.sin(t * 0.6) * 0.18, 0]}>
       {[-0.2, 0.2].map((lx) => (
         <group key={lx}>
           <mesh geometry={G.leg} position={[lx, 0.36, 0]} castShadow>{mat("#2B303C")}</mesh>
@@ -140,7 +159,7 @@ export function Person({ x = 0, z = 0, s = 1, mood = 0, skin = SKINS[0], hair = 
       })}
       <group position={[0, 2.1, 0]} rotation={[angry * 0.1 - happy * 0.1, 0, Math.sin(t * 1.3) * 0.06]}>
         <mesh geometry={G.head} castShadow>
-          <meshPhysicalMaterial color={headCol} roughness={0.52} clearcoat={0.18} clearcoatRoughness={0.6} />
+          <meshPhysicalMaterial color={headCol} roughness={0.52} clearcoat={0.18} clearcoatRoughness={0.6} transparent={op < 1} opacity={op} />
         </mesh>
         {style !== 4 && <mesh geometry={style === 3 ? G.hairShort : G.hairCap} rotation={[-0.46, 0, style === 2 ? 0.28 : 0]} castShadow>{mat(hair, 0.7)}</mesh>}
         {style === 1 && <mesh geometry={G.bun} position={[0, 0.5, -0.38]} castShadow>{mat(hair, 0.7)}</mesh>}
@@ -208,15 +227,15 @@ export function Mark({ appear = 1, y = 1.6, scale = 1 }) {
   const cols = [C.r1, C.r3, C.r5];
   return (
     <group position={[0, y + Math.sin(t * 1.6) * 0.06, 0]} rotation={[0, Math.sin(t * 0.9) * 0.32, 0]} scale={scale}>
-      <mesh geometry={DOT} scale={clamp01(appear * 4)} castShadow>
-        <meshPhysicalMaterial color={C.ink} roughness={0.3} clearcoat={1} clearcoatRoughness={0.2} />
+      <mesh geometry={DOT} scale={0.85 + 0.15 * clamp01(appear * 4)} castShadow visible={appear > 0.01}>
+        <meshPhysicalMaterial color={C.ink} roughness={0.3} clearcoat={1} clearcoatRoughness={0.2} transparent opacity={clamp01(appear * 4)} />
       </mesh>
       {ARCS.map((g, i) => {
         const a = clamp01(appear * 4 - 1 - i * 0.7);
         const glow = Math.max(0, Math.sin(t * 3.2 - i * 0.9)) * 0.35;
         return (
-          <mesh key={i} geometry={g} rotation={[0, 0, -0.875]} scale={[a, a, a]} castShadow>
-            <meshPhysicalMaterial color={cols[i]} emissive={cols[i]} emissiveIntensity={0.08 + glow} roughness={0.32} clearcoat={1} clearcoatRoughness={0.15} />
+          <mesh key={i} geometry={g} rotation={[0, 0, -0.875]} scale={0.85 + 0.15 * a} castShadow visible={a > 0.01}>
+            <meshPhysicalMaterial color={cols[i]} emissive={cols[i]} emissiveIntensity={0.06 + glow} roughness={0.3} clearcoat={1} clearcoatRoughness={0.12} transparent={a < 1} opacity={a} />
           </mesh>
         );
       })}
@@ -267,4 +286,61 @@ export function StarRow({ value = 0, y = 4.2, gap = 1.2, scale = 1 }) {
       </group>
     );
   });
+}
+
+
+/* ---------- the review stream: one tile per review, coloured by its star rating ---------- */
+const TILE = new RoundedBoxGeometry(0.46, 0.3, 0.06, 3, 0.07);
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+const smooth = (a, b, x) => { const t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+const inOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+/** Deterministic: every tile's position is a pure function of the frame, so any frame renders the same. */
+export function ReviewStream({ ratings, share = 0.85, count = 560, sources = [[-5.6, 3.1, -0.5], [5.6, 3.1, -0.5]], target = [0, 2.0, 0], spawnEnd = 7 }) {
+  const frame = useCurrentFrame();
+  const ref = useRef();
+  const tiles = useMemo(() => {
+    const r = rng(7);
+    const total = Object.values(ratings).reduce((a, b) => a + b, 0);
+    const cum = [1, 2, 3, 4, 5].map((k, i, arr) => arr.slice(0, i + 1).reduce((a, s) => a + (ratings[s] || 0), 0) / total);
+    return Array.from({ length: count }, (_, i) => {
+      const u = r();
+      const stars = 1 + cum.findIndex((c) => u <= c);
+      const src = r() < share ? 0 : 1;
+      return { stars, src, t0: (i / count) * spawnEnd + r() * 0.12, dur: 1.7 + r() * 1.1,
+        ctrl: [(src ? 1 : -1) * (1.2 + r() * 2.6), 4.2 + r() * 2.2, (r() - 0.5) * 3.2], spin: (r() - 0.5) * 6, jitter: [(r() - 0.5) * 1.4, (r() - 0.5) * 1.2, (r() - 0.5) * 0.8] };
+    });
+  }, [ratings, share, count, spawnEnd]);
+  useLayoutEffect(() => {
+    const m = ref.current; if (!m) return;
+    const col = new THREE.Color();
+    tiles.forEach((t, i) => m.setColorAt(i, col.set([C.r1, C.r1, C.r2, C.r3, C.r4, C.r5][t.stars])));
+    m.instanceColor.needsUpdate = true;
+  }, [tiles]);
+  useLayoutEffect(() => {
+    const m = ref.current; if (!m) return;
+    const time = frame / 30;
+    const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), P = new THREE.Vector3(), S = new THREE.Vector3();
+    tiles.forEach((t, i) => {
+      const life = (time - t.t0) / t.dur;
+      if (life <= 0 || life >= 1) { M.makeScale(0, 0, 0); m.setMatrixAt(i, M); return; }
+      const k = inOut(life);
+      const a = sources[t.src].map((v, j) => v + t.jitter[j]);
+      const b = target;
+      const u = 1 - k;
+      P.set(u * u * a[0] + 2 * u * k * t.ctrl[0] + k * k * b[0], u * u * a[1] + 2 * u * k * t.ctrl[1] + k * k * b[1], u * u * a[2] + 2 * u * k * t.ctrl[2] + k * k * b[2]);
+      const sc = (0.55 + 0.45 * smooth(0, 0.12, life)) * (1 - 0.85 * smooth(0.72, 1, life));
+      E.set(Math.sin(time * 2 + i) * 0.35, t.spin * life, Math.cos(time * 1.5 + i) * 0.3);
+      M.compose(P, Q.setFromEuler(E), S.set(sc, sc, sc));
+      m.setMatrixAt(i, M);
+    });
+    m.instanceMatrix.needsUpdate = true;
+  });
+  return (
+    <instancedMesh ref={ref} args={[TILE, undefined, count]} castShadow frustumCulled={false}>
+      <meshPhysicalMaterial color="#ffffff" roughness={0.38} clearcoat={0.7} clearcoatRoughness={0.25} />
+    </instancedMesh>
+  );
 }

@@ -10,39 +10,39 @@
   },
   {
    "id": "intro",
-   "en": "So I designed an AI agent: Écoute.",
-   "fr": "Alors j'ai conçu un agent IA : Écoute.",
-   "tts": "So I designed an AI agent: [Écoute](/Akˈut/)."
+   "en": "So I designed an AI agent that reads it all. I call it Écoute.",
+   "fr": "Alors j'ai conçu un agent IA qui lit tout. Je l'ai appelé Écoute.",
+   "tts": "So I designed an AI agent that reads it all. I call it [Écoute](/Akˈut/)."
   },
   {
-   "id": "scope",
-   "en": "It reads every new review from forty-one brands, like BNP Paribas, Orange, Decathlon and Deliveroo.",
-   "fr": "Il lit chaque nouvel avis de 41 marques, comme BNP Paribas, Orange, Decathlon et Deliveroo.",
-   "tts": "It reads every new review from forty-one brands, like B N P [Paribas](/pˌɛɹibˈɑ/), Orange, [Decathlon](/dˌAkætlˈɔn/) and Deliveroo."
+   "id": "stream",
+   "en": "It collects every new review for forty-one brands, like BNP Paribas, Orange, Decathlon and Deliveroo.",
+   "fr": "Il collecte chaque nouvel avis de 41 marques, comme BNP Paribas, Orange, Decathlon et Deliveroo.",
+   "tts": "It collects every new review for forty-one brands, like B N P [Paribas](/pˌɛɹibˈɑ/), Orange, [Decathlon](/dˌAkætlˈɔn/) and Deliveroo."
   },
   {
    "id": "understand",
-   "en": "It sorts each one into fifteen pain points, and measures what each costs in stars.",
-   "fr": "Il classe chaque avis parmi quinze irritants, et mesure ce que chacun coûte en étoiles.",
-   "tts": "It sorts each one into fifteen pain points, and measures what each costs in stars."
+   "en": "A model I trained sorts each one into fifteen pain points, and prices each one in stars.",
+   "fr": "Un modèle que j'ai entraîné classe chaque avis parmi quinze irritants, et chiffre chacun en étoiles.",
+   "tts": "A model I trained sorts each one into fifteen pain points, and prices each one in stars."
   },
   {
    "id": "deliveroo",
-   "en": "Here's what we found. Deliveroo shows 4.4 stars on Google Play, but recent reviews average just 2.5. Delivery problems alone cost nearly half a star.",
-   "fr": "Voici ce que nous avons trouvé. Deliveroo affiche 4,4 étoiles sur Google Play, mais les avis récents donnent à peine 2,5. Les problèmes de livraison coûtent à eux seuls près d'une demi-étoile.",
-   "tts": "Here's what we found. Deliveroo shows 4.4 stars on Google Play, but recent reviews average just 2.5. Delivery problems alone cost nearly half a star."
+   "en": "Here's what we found. Deliveroo shows 4.4 stars on Google Play, but its recent written reviews average just 2.5. Delivery problems alone cost nearly half a star.",
+   "fr": "Voici ce que nous avons trouvé. Deliveroo affiche 4,4 étoiles sur Google Play, mais ses avis écrits récents donnent à peine 2,5. Les problèmes de livraison coûtent à eux seuls près d'une demi-étoile.",
+   "tts": "Here's what we found. Deliveroo shows 4.4 stars on Google Play, but its recent written reviews average just 2.5. Delivery problems alone cost nearly half a star."
   },
   {
-   "id": "leclerc",
-   "en": "At E.Leclerc, complaints jumped seven-fold in one day. In the reviews, the agent traced them to an app update: crashes and failed logins.",
-   "fr": "Chez E.Leclerc, les plaintes ont été multipliées par sept en un jour. Dans les avis, l'agent les a reliées à une mise à jour : plantages et connexions impossibles.",
-   "tts": "At [E.Leclerc](/ˌi ləklˈɛɹ/), complaints jumped seven-fold in one day. In the reviews, the agent traced them to an app update: crashes and failed logins."
+   "id": "agent",
+   "en": "Then something breaks. On November tenth, E.Leclerc complaints jump seven-fold. The agent investigates on its own. It writes SQL, reads the reviews, and finds the pattern: an app update, with crashes and failed logins.",
+   "fr": "Puis quelque chose casse. Le 10 novembre, les plaintes sur E.Leclerc sont multipliées par sept. L'agent enquête seul. Il écrit du SQL, lit les avis, et trouve la cause : une mise à jour, avec plantages et connexions impossibles.",
+   "tts": "Then something breaks. On November tenth, [E.Leclerc](/ˌi ləklˈɛɹ/) complaints jump seven-fold. The agent investigates on its own. It writes SQL, reads the reviews, and finds the pattern: an app update, with crashes and failed logins."
   },
   {
-   "id": "actions",
-   "en": "What they could do: E.Leclerc, ship a hotfix and test logins before each release. Deliveroo, fix deliveries first.",
-   "fr": "Ce qu'ils pourraient faire : E.Leclerc, publier un correctif et tester la connexion avant chaque version. Deliveroo, corriger d'abord les livraisons.",
-   "tts": "What they could do: [E.Leclerc](/ˌi ləklˈɛɹ/), ship a hotfix and test logins before each release. Deliveroo, fix deliveries first."
+   "id": "brief",
+   "en": "Then it writes the brief. E.Leclerc: ship a hotfix, and test logins before each release. Deliveroo: fix deliveries first.",
+   "fr": "Puis il rédige sa note. E.Leclerc : publier un correctif, et tester la connexion avant chaque version. Deliveroo : corriger d'abord les livraisons.",
+   "tts": "Then it writes the brief. [E.Leclerc](/ˌi ləklˈɛɹ/): ship a hotfix, and test logins before each release. Deliveroo: fix deliveries first."
   },
   {
    "id": "improve",

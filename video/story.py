@@ -134,6 +134,27 @@ def main():
             if l - f > rise:
                 rise, trend = l - f, {"brand": x["name"], "points": [round(w["r"], 3) for w in wk], "from": round(f, 1), "to": round(l, 1), "weeks": len(wk)}
 
+    # 6. the review stream: real star-rating mix and store split
+    mix_ = dict(con.execute("select rating, count(*) from r group by 1").fetchall())
+    stores = dict(con.execute("select source, count(*) from r group by 1").fetchall())
+
+    # 7. the agent at work: its real tool calls for the E.Leclerc case, in order (errors included)
+    replay = []
+    for st in case["steps"]:
+        if st.get("type") != "tool":
+            continue
+        res = str(st.get("result_preview", ""))
+        replay.append({"tool": st["tool"], "args": st.get("args", {}), "ok": '"error"' not in res[:12],
+                       "result": res[:600]})
+    brief = case["brief"]
+    from datetime import datetime
+    secs = (datetime.fromisoformat(case["finished"]) - datetime.fromisoformat(case["started"])).total_seconds()
+    counts = []
+    for st in replay:
+        if st["tool"] == "run_sql" and "aspect" in st["result"]:
+            counts = [{"aspect": a, "n": int(n)} for a, n in re.findall(r'"aspect": "(\w+)", "cnt": (\d+)', st["result"])][:3]
+    clf = b["overview"]["classifier"]
+
     sectors = {}
     for x in b["brands"]:
         sectors.setdefault(SECTORS.get(x["sector"], x["sector"]), []).append(x["name"])
@@ -154,6 +175,17 @@ def main():
                     "read": n_read, "evidence": evidence, "confidence": case["brief"]["confidence"]},
         "actions": actions,
         "improve": improve,
+        "stream": {"ratings": {int(k): int(v) for k, v in mix_.items()}, "google_play": int(stores.get("google_play", 0)),
+                   "app_store": int(stores.get("app_store", 0))},
+        "agent": {"model": case.get("model"), "case": {k: (str(v)[:10] if k == "day" else v) for k, v in case["case"].items()},
+                  "steps": replay, "headline": brief["headline"], "confidence": brief["confidence"],
+                  "actions": [{"team": a["team"], "action": a["action"]} for a in brief["actions"]],
+                  "root_cause": brief.get("root_cause"), "seconds": int(secs), "run_day": case["started"][:10], "verified": bool(case.get("evidence_verified")),
+                  "evidence": [clean(e["text"], 120) for e in case["evidence"]],
+                  "drivers": [{"label": d["label"], "lost": round(d["stars_lost"], 3), "n": d.get("complaints")} for d in lc["drivers"][:2]],
+                  "counts": counts},
+        "model": {"train": clf["n_train"], "heldout": clf["n_heldout"], "llm_labels": b["overview"]["label_sources"]["llm"],
+                  "classified": b["overview"]["label_sources"]["classifier"], "micro_f1": clf["heldout"]["aspect_micro_f1"]},
         "trend": trend,
     }
 
@@ -162,17 +194,18 @@ def main():
     lines = [
         ("hook", "Every day, customers tell French brands exactly what's broken. Most of it is never read.",
                  "Chaque jour, les clients disent aux marques françaises ce qui ne va pas. La plupart du temps, personne ne lit."),
-        ("intro", "So I designed an AI agent: Écoute.", "Alors j'ai conçu un agent IA : Écoute."),
-        ("scope", "It reads every new review from forty-one brands, like BNP Paribas, Orange, Decathlon and Deliveroo.",
-                  "Il lit chaque nouvel avis de 41 marques, comme BNP Paribas, Orange, Decathlon et Deliveroo."),
-        ("understand", "It sorts each one into fifteen pain points, and measures what each costs in stars.",
-                       "Il classe chaque avis parmi quinze irritants, et mesure ce que chacun coûte en étoiles."),
-        ("deliveroo", f"Here's what we found. Deliveroo shows {dv['store_rating']:.1f} stars on Google Play, but recent reviews average just {avg:.1f}. Delivery problems alone cost nearly half a star.",
-                      f"Voici ce que nous avons trouvé. Deliveroo affiche {fr(dv['store_rating'])} étoiles sur Google Play, mais les avis récents donnent à peine {fr(avg)}. Les problèmes de livraison coûtent à eux seuls près d'une demi-étoile."),
-        ("leclerc", "At E.Leclerc, complaints jumped seven-fold in one day. In the reviews, the agent traced them to an app update: crashes and failed logins.",
-                    "Chez E.Leclerc, les plaintes ont été multipliées par sept en un jour. Dans les avis, l'agent les a reliées à une mise à jour : plantages et connexions impossibles."),
-        ("actions", "What they could do: E.Leclerc, ship a hotfix and test logins before each release. Deliveroo, fix deliveries first.",
-                    "Ce qu'ils pourraient faire : E.Leclerc, publier un correctif et tester la connexion avant chaque version. Deliveroo, corriger d'abord les livraisons."),
+        ("intro", "So I designed an AI agent that reads it all. I call it Écoute.",
+                  "Alors j'ai conçu un agent IA qui lit tout. Je l'ai appelé Écoute."),
+        ("stream", "It collects every new review for forty-one brands, like BNP Paribas, Orange, Decathlon and Deliveroo.",
+                   "Il collecte chaque nouvel avis de 41 marques, comme BNP Paribas, Orange, Decathlon et Deliveroo."),
+        ("understand", "A model I trained sorts each one into fifteen pain points, and prices each one in stars.",
+                       "Un modèle que j'ai entraîné classe chaque avis parmi quinze irritants, et chiffre chacun en étoiles."),
+        ("deliveroo", f"Here's what we found. Deliveroo shows {dv['store_rating']:.1f} stars on Google Play, but its recent written reviews average just {avg:.1f}. Delivery problems alone cost nearly half a star.",
+                      f"Voici ce que nous avons trouvé. Deliveroo affiche {fr(dv['store_rating'])} étoiles sur Google Play, mais ses avis écrits récents donnent à peine {fr(avg)}. Les problèmes de livraison coûtent à eux seuls près d'une demi-étoile."),
+        ("agent", "Then something breaks. On November tenth, E.Leclerc complaints jump seven-fold. The agent investigates on its own. It writes SQL, reads the reviews, and finds the pattern: an app update, with crashes and failed logins.",
+                  "Puis quelque chose casse. Le 10 novembre, les plaintes sur E.Leclerc sont multipliées par sept. L'agent enquête seul. Il écrit du SQL, lit les avis, et trouve la cause : une mise à jour, avec plantages et connexions impossibles."),
+        ("brief", "Then it writes the brief. E.Leclerc: ship a hotfix, and test logins before each release. Deliveroo: fix deliveries first.",
+                  "Puis il rédige sa note. E.Leclerc : publier un correctif, et tester la connexion avant chaque version. Deliveroo : corriger d'abord les livraisons."),
         ("improve", f"Fix the problems Écoute found, and E.Leclerc's recent rating could climb from {lc['avg_rating']:.1f} to {lc_after:.1f} stars.",
                     f"Corrigez les problèmes trouvés par Écoute, et la note récente d'E.Leclerc pourrait passer de {fr(lc['avg_rating'])} à {fr(lc_after)} étoiles."),
         ("cta", "Écoute. Every review, heard.", "Écoute. Chaque avis, entendu."),

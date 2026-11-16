@@ -70,7 +70,7 @@ flowchart LR
 | **Understand** | A free LLM (Gemini free tier, model discovered at run time) annotates a stratified sample of 4,300 reviews against a 15-topic taxonomy. A local classifier (multilingual sentence embeddings + word and character TF-IDF + logistic regression) learns from it and scores every review in minutes, with no API cost. |
 | **Explain** | DuckDB SQL models: brand scorecards, a brand × topic pain map, weekly trends, a release radar (each app version against the previous one), daily spike detection, and a ridge regression of star ratings on topic mentions: *stars lost = impact × prevalence*. |
 | **Investigate** | The analyst agent receives each spike or bad release, works with three tools (read-only SQL, review search, key drivers), must back every number with a tool result, and files a structured brief. Cited reviews are checked against what it actually read. |
-| **Show** | A static website (brand explorer, what-if simulator, pain map, switching map, release radar, agent console, method) and a 60-second launch film rendered from the same data. |
+| **Show** | A static website (brand explorer, what-if simulator, pain map, switching map, release radar, agent console, method) and a launch film rendered from the same data, in which the agent replays its own logged investigation. |
 
 The data lives on the `data` branch so `main` stays code only.
 
@@ -81,7 +81,7 @@ The data lives on the `data` branch so `main` stays code only.
 | Annotating 4,300 reviews | Gemini Flash / Flash-Lite, free tier (falls through models when a daily quota is used up, resumes next run) | 0 |
 | Scoring every review | Local scikit-learn model + `paraphrase-multilingual-MiniLM-L12-v2` on CPU | 0 |
 | Investigations | Gemini free tier | 0 |
-| Narration of the film | Kokoro TTS (Apache-2.0), on a GitHub runner | 0 |
+| Narration of the film | ElevenLabs free plan, "Cyril" voice, generated in the web app and credited in the film; aligned to the picture with faster-whisper on a GitHub runner | 0 |
 
 ---
 
@@ -122,7 +122,7 @@ Or from GitHub, in the **Actions** tab:
 | **Collect reviews** | New reviews for all brands or a chosen few. Uncomment the schedule for live mode (every 10 minutes). |
 | **Annotate with free AI** | Labels the training sample; resumable when the free quota runs out. |
 | **Analyse** | Trains the classifier, scores every review, builds insights, lets the AI analyst investigate, builds the website data. |
-| **Video narration** | Generates the film's voice with Kokoro. |
+| **Video narration** | Aligns the recorded narration to the script with faster-whisper (word timings drive the cuts and the French subtitles). Kokoro and the ElevenLabs API remain as fallbacks. |
 
 ## Project layout
 
@@ -130,7 +130,7 @@ Or from GitHub, in the **Actions** tab:
 ecoute/        collector, resolver, taxonomy, free-LLM client, classifier, insights, agent, site builder
 sql/           DuckDB models (facts, scorecard, heatmap, trends, releases, spikes, switching)
 site/          static website (vanilla JS + D3)
-video/         story builder, narration, Remotion + Three.js film
+video/         story builder, narration alignment, sound mix, Remotion + Three.js film
 config/        brands and competitor dictionary
 tests/         offline tests (no network)
 ```

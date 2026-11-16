@@ -522,6 +522,166 @@
    }
   ]
  },
+ "stream": {
+  "ratings": {
+   "5": 69802,
+   "2": 6966,
+   "1": 32818,
+   "3": 6581,
+   "4": 11312
+  },
+  "google_play": 108114,
+  "app_store": 19365
+ },
+ "agent": {
+  "model": "gemini-3.5-flash-lite",
+  "case": {
+   "type": "complaint_spike",
+   "brand": "E.Leclerc",
+   "day": "2026-11-10",
+   "negative_reviews": 48,
+   "usual_per_day": 6.6,
+   "z_score": 10.61
+  },
+  "steps": [
+   {
+    "tool": "run_sql",
+    "args": {
+     "query": "SELECT brand, sector, count(*) as cnt FROM facts WHERE brand='E.Leclerc' GROUP BY 1,2"
+    },
+    "ok": true,
+    "result": "1 rows: [{\"brand\": \"E.Leclerc\", \"sector\": \"retail\", \"cnt\": 2532}]"
+   },
+   {
+    "tool": "run_sql",
+    "args": {
+     "query": "SELECT review_id, at, rating, title, text, sentiment, aspects FROM facts WHERE brand='E.Leclerc' AND at >= '2026-11-08' AND at <= '2026-11-12' AND sentiment='negative' LIMIT 10"
+    },
+    "ok": false,
+    "result": "{\"error\": \"Parser Error: syntax error at or near \\\",\\\"\\n\\nLINE 1: select * from (SELECT review_id, at, rating, title, text, sentiment, aspects FROM facts WHERE...\\n                                           ^\"}"
+   },
+   {
+    "tool": "search_reviews",
+    "args": {
+     "brand": "E.Leclerc",
+     "since": "2026-11-08",
+     "until": "2026-11-12"
+    },
+    "ok": true,
+    "result": "8 reviews read"
+   },
+   {
+    "tool": "key_drivers",
+    "args": {
+     "brand": "E.Leclerc"
+    },
+    "ok": true,
+    "result": "{\"reviews\": 1071, \"avg_rating\": 3.38, \"potential\": 0.78, \"drivers\": [{\"aspect\": \"app_reliability\", \"label\": \"App reliability\", \"prevalence\": 0.2176, \"impact\": 1.32, \"stars_lost\": 0.287, \"complaints\": 233}, {\"aspect\": \"login_access\", \"label\": \"Login & access\", \"prevalence\": 0.0747, \"impact\": 1.38, \"s"
+   },
+   {
+    "tool": "run_sql",
+    "args": {
+     "query": "SELECT aspect, count(*) as cnt FROM mentions m JOIN facts f ON m.review_id = f.review_id WHERE f.brand='E.Leclerc' AND f.at >= '2026-11-08' AND f.at <= '2026-11-12' GROUP BY aspect ORDER BY cnt DESC"
+    },
+    "ok": true,
+    "result": "14 rows: [{\"aspect\": \"app_reliability\", \"cnt\": 66}, {\"aspect\": \"features\", \"cnt\": 45}, {\"aspect\": \"login_access\", \"cnt\": 21}]"
+   },
+   {
+    "tool": "submit_brief",
+    "args": {
+     "what_happened": "On November 10, 2026, E.Leclerc faced 48 negative reviews (a z-score spike of 10.61 compared to the usual 6.6 per day). Users overwhelmingly reported that version 11.0.1 crashes on startup (\"Impossible à ouvrir\", \"ne fonctionne plus\") and prevents users from logging into their accounts (\"Impossible de me connecter à mon compte depuis la MAJ\").",
+     "confidence": "high",
+     "headline": "E.Leclerc experienced a 10.61 z-score complaint spike on Nov 10, 2026, driven by app version 11.0.1 startup crashes and login failures.",
+     "impact": "48 negative reviews on Nov 10 (vs 6.6 usual per day); app_reliability and login_access are top key drivers of rating loss (0.287 and 0.103 stars lost respectively).",
+     "actions": [
+      {
+       "expected_effect": "Restore app reliability and stop the influx of negative reviews regarding app crashes and login failures",
+       "team": "Mobile",
+       "action": "Roll back v11.0.1 or immediately issue hotfix v11.0.2 resolving startup crashes and login loop failures"
+      },
+      {
+       "action": "Establish pre-release regression testing for authentication and cold-start flows on iOS and Android",
+       "team": "IT security",
+       "expected_effect": "Prevent faulty version updates from reaching production and causing severe z-score spikes"
+      },
+      {
+       "action": "Publish an in-app notice and social/store response acknowledging the version 11 login/crash bug with an ETA for the patch",
+       "expected_effect": "Mitigate customer frustration and reduce churn among loyal card-holders and regular shoppers",
+       "team": "Customer service"
+      }
+     ],
+     "root_cause": "Release of app version 11.0.1 introduced critical bugs causing app startup crashes and authentication/login failures.",
+     "evidence_review_ids": [
+      "4491c2bb2a5a64b0f2fd",
+      "faa393fb9ebe142e194e",
+      "22720f1dcd4c4eb7b116",
+      "f426c488b4ab742a4901"
+     ]
+    },
+    "ok": true,
+    "result": "{\"ok\": true}"
+   }
+  ],
+  "headline": "E.Leclerc experienced a 10.61 z-score complaint spike on Nov 10, 2026, driven by app version 11.0.1 startup crashes and login failures.",
+  "confidence": "high",
+  "actions": [
+   {
+    "team": "Mobile",
+    "action": "Roll back v11.0.1 or immediately issue hotfix v11.0.2 resolving startup crashes and login loop failures"
+   },
+   {
+    "team": "IT security",
+    "action": "Establish pre-release regression testing for authentication and cold-start flows on iOS and Android"
+   },
+   {
+    "team": "Customer service",
+    "action": "Publish an in-app notice and social/store response acknowledging the version 11 login/crash bug with an ETA for the patch"
+   }
+  ],
+  "root_cause": "Release of app version 11.0.1 introduced critical bugs causing app startup crashes and authentication/login failures.",
+  "seconds": 14,
+  "run_day": "2026-11-14",
+  "verified": true,
+  "evidence": [
+   "Une catastrophe. Impossible à ouvrir suite mise à jour.",
+   "Impossible de me connecter à mon compte depuis la MAJ !! Je vois dans les autres commentaires que je ne suis pas la…",
+   "On est parti d’une application qui marchait à peu près bien a une application que l’on ne peut même pas connecter à un…",
+   "Appli très pratique quand on oublie sa carte de fidélité et pour voir ses tickets de caisse. Mais elle ne fonctionne…"
+  ],
+  "drivers": [
+   {
+    "label": "App reliability",
+    "lost": 0.287,
+    "n": 233
+   },
+   {
+    "label": "Login & access",
+    "lost": 0.103,
+    "n": 80
+   }
+  ],
+  "counts": [
+   {
+    "aspect": "app_reliability",
+    "n": 66
+   },
+   {
+    "aspect": "features",
+    "n": 45
+   },
+   {
+    "aspect": "login_access",
+    "n": 21
+   }
+  ]
+ },
+ "model": {
+  "train": 4000,
+  "heldout": 300,
+  "llm_labels": 4300,
+  "classified": 123179,
+  "micro_f1": 0.655
+ },
  "trend": {
   "brand": "Doctolib",
   "points": [
