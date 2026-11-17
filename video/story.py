@@ -208,7 +208,9 @@ def main():
                   "Puis il rédige sa note. E.Leclerc : publier un correctif, et tester la connexion avant chaque version. Deliveroo : corriger d'abord les livraisons."),
         ("improve", f"Fix the problems Écoute found, and E.Leclerc's recent rating could climb from {lc['avg_rating']:.1f} to {lc_after:.1f} stars.",
                     f"Corrigez les problèmes trouvés par Écoute, et la note récente d'E.Leclerc pourrait passer de {fr(lc['avg_rating'])} à {fr(lc_after)} étoiles."),
-        ("cta", "Écoute. Every review, heard.", "Écoute. Chaque avis, entendu."),
+        ("site", "It's all on the Écoute website: pick any brand, see what's costing it stars, and read the agent's brief.",
+                 "Tout est sur le site d'Écoute : choisissez une marque, voyez ce qui lui coûte des étoiles, et lisez la note de l'agent."),
+        ("cta", "Explore it yourself. Écoute. Every review, heard.", "Explorez-le vous-même. Écoute. Chaque avis, entendu."),
     ]
     assert abs(peak / base - 7) < 1, f"spike ratio changed: {peak / base:.1f}"  # the narration says seven-fold
     assert 0.45 > top["stars_lost"] > 0.38, "the narration says nearly half a star"

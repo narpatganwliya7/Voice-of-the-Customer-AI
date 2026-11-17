@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, Sequence, interpolate, spring, useCurrentFrame, useVideoConfig, Easing } from "remotion";
+import { AbsoluteFill, Sequence, Img, staticFile, interpolate, spring, useCurrentFrame, useVideoConfig, Easing } from "remotion";
 import { C, F, RATING, EASE, loadFonts, mix } from "./theme.js";
 import { Paper, Captions, ReviewCard, Headline, Pill, StarsInline, Star, Icon, Badge, Bubble, Avatar, clamp } from "./ui.jsx";
 import { Stage, Person, CROWD, Mark, Columns, StarRow, ReviewStream, projector } from "./Clay.jsx";
@@ -653,26 +653,114 @@ function Improve({ s }) {
   );
 }
 
-/* 9 ─ End card */
+/* 9 ─ The website: the real site, captured in a browser, explored in three beats */
+const SITE_URL = "narpatganwliya7.github.io/Voice-of-the-Customer-AI";
+const SHOT = { w: 1280, h: 1120 };               // CSS size of every capture (taken at 3x)
+const CHIP = { x: 663.6, y: 422.6 };             // centre of the Deliveroo chip in the explorer capture
+const BARS = { x: 607, y: 812 };                 // "Stars lost per topic" card
+const BRIEF = { x: 940, y: 470 };                // the brief's headline in the agent capture
+
+function Cursor({ x, y, press }) {
+  return (
+    <svg width="34" height="40" viewBox="0 0 34 40" style={{ position: "absolute", left: x - 4, top: y - 2, transform: `scale(${1 - press * 0.12})`, transformOrigin: "4px 2px",
+      filter: "drop-shadow(0 4px 6px rgba(20,22,28,.35))" }}>
+      <path d="M4 2l24 21-11 1.6 6.4 12.4-5 2.4-6.2-12.6L4 33z" fill="#14161C" stroke="#fff" strokeWidth="2.4" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function Site({ s }) {
+  const f = useCurrentFrame();
+  const { width: W, fps } = useVideoConfig();
+  const pick = wordAt(s, /^pick/i, 62), see = wordAt(s, /^see/i, 96), read = wordAt(s, /^read/i, 150);
+  const head = sp(f, fps, 18);
+  const win = sp(f - 2, fps, 18, 1);
+  const VW = 960, VH = 800, base = VW / SHOT.w;    // viewport of the browser window, in video pixels
+
+  // which capture is on screen, and the scroll between them
+  const toExplorer = ramp(f, pick - 26, pick - 10, IO);
+  const clickAt = pick + 14;
+  const after = ramp(f, clickAt + 2, clickAt + 8);
+  const toAgent = ramp(f, read - 14, read + 2, IO);
+
+  // camera: where the viewport looks (CSS px) and how close
+  const cam = (() => {
+    if (f < pick - 10) return { x: 640, y: 380 + 40 * ramp(f, 0, pick - 26), z: 1 + 0.04 * ramp(f, 0, pick - 26) };
+    if (f < read - 14) {
+      const z = ramp(f, see - 6, see + 18, IO);
+      return { x: 640 + (BARS.x - 640) * z, y: 380 + (BARS.y - 380) * z, z: 1 + 0.95 * z };
+    }
+    const z = ramp(f, read + 2, read + 30, IO);
+    return { x: 640 + (BRIEF.x - 640) * z, y: 380 + (BRIEF.y - 380) * z, z: 1 + 0.55 * z };
+  })();
+  const shotStyle = (dy = 0, op = 1) => {
+    const sc = base * cam.z;
+    let left = VW / 2 - cam.x * sc, top = VH / 2 - cam.y * sc;
+    left = Math.min(0, Math.max(VW - SHOT.w * sc, left));
+    top = Math.min(0, Math.max(VH - SHOT.h * sc, top));
+    return { position: "absolute", left, top: top + dy, width: SHOT.w * sc, height: SHOT.h * sc, opacity: op };
+  };
+  // cursor path in CSS px of the explorer capture, drawn in viewport pixels
+  const mv = ramp(f, pick - 8, clickAt, IO);
+  const cx = 1040 + (CHIP.x - 1040) * mv, cy = 980 + (CHIP.y - 980) * mv;
+  const press = Math.max(0, 1 - Math.abs(f - clickAt) / 4);
+  const ring = ramp(f, clickAt, clickAt + 14);
+  const showCursor = f > pick - 12 && f < see + 4;
+  const sc = base * cam.z;
+  const vx = (x) => shotStyle().left + x * sc, vy = (y) => shotStyle().top + y * sc;
+
+  return (
+    <AbsoluteFill>
+      <Glow items={[{ x: W * 0.5, y: 760, r: 460, c: C.cobalt, o: 0.08 }]} />
+      <Headline appear={head} size={84} sub="The same data, open to anyone">It's all on the website</Headline>
+      <div style={{ position: "absolute", left: (W - VW) / 2, top: 292, width: VW, opacity: Math.min(1, win * 1.4),
+        transform: `translateY(${(1 - win) * 60}px) scale(${0.96 + 0.04 * win})`, transformOrigin: "50% 0%" }}>
+        <div style={{ background: C.card, borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 2px rgba(20,22,28,.08), 0 50px 90px -40px rgba(28,34,52,.5)" }}>
+          <div style={{ height: 56, display: "flex", alignItems: "center", gap: 14, padding: "0 18px", background: "#EEF0F4" }}>
+            <span style={{ display: "flex", gap: 8 }}>{[C.r1, C.r3, C.r5].map((c) => <span key={c} style={{ width: 13, height: 13, borderRadius: 7, background: c }} />)}</span>
+            <span style={{ flex: 1, height: 36, borderRadius: 10, background: "#fff", display: "flex", alignItems: "center", gap: 8, padding: "0 14px",
+              font: `500 20px ${F.body}`, color: C.ink2 }}>
+              <Icon name="lock" size={17} color={C.ink3} /><span style={{ color: C.ink }}>{SITE_URL}</span>
+            </span>
+          </div>
+          <div style={{ position: "relative", width: VW, height: VH, overflow: "hidden", background: C.paper }}>
+            {toExplorer < 1 && <Img src={staticFile("site/hero.jpg")} style={shotStyle(-180 * toExplorer, 1 - toExplorer)} />}
+            {toExplorer > 0 && toAgent < 1 && <Img src={staticFile("site/explorer_before.jpg")} style={shotStyle(180 * (1 - toExplorer) - 180 * toAgent, Math.min(toExplorer, 1 - toAgent))} />}
+            {after > 0 && toAgent < 1 && <Img src={staticFile("site/explorer_after.jpg")} style={shotStyle(-180 * toAgent, Math.min(after, 1 - toAgent))} />}
+            {toAgent > 0 && <Img src={staticFile("site/agent.jpg")} style={shotStyle(180 * (1 - toAgent), toAgent)} />}
+            {ring > 0 && ring < 1 && (
+              <span style={{ position: "absolute", left: vx(CHIP.x), top: vy(CHIP.y), width: 70, height: 70, marginLeft: -35, marginTop: -35, borderRadius: 35,
+                border: `3px solid ${C.cobalt}`, opacity: 1 - ring, transform: `scale(${0.4 + ring})` }} />
+            )}
+            {showCursor && <Cursor x={vx(cx)} y={vy(cy)} press={press} />}
+          </div>
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+}
+
+/* 10 ─ End card */
 function End({ s }) {
   const f = useCurrentFrame();
   const { width: W, height: H, fps } = useVideoConfig();
   const a = sp(f, fps, 16);
   const b = sp(f - 10, fps, 18);
-  const c = sp(f - 22, fps, 18);
+  const c = sp(f - 12, fps, 18);
+  const l = sp(f - Math.max(4, wordAt(s, /^explore/i, 8) - 2), fps, 15);
   const cam = { position: [0, 2.6, 13.5], fov: 30, look: [0, 1.9, 0] };
   const happy = [CROWD[1], CROWD[2], CROWD[4], CROWD[5]];
   return (
     <AbsoluteFill>
       <Glow items={[{ x: W * 0.25, y: H * 0.3, r: 300, c: C.r1, o: 0.07 }, { x: W * 0.5, y: H * 0.3, r: 300, c: C.r3, o: 0.07 }, { x: W * 0.75, y: H * 0.3, r: 300, c: C.r5, o: 0.09 }]} />
-      <div style={{ position: "absolute", left: 0, top: 40 }}>
-        <Stage width={W} height={560} cam={cam} shadow={0.15}>
+      <div style={{ position: "absolute", left: 0, top: -20 }}>
+        <Stage width={W} height={540} cam={cam} shadow={0.15}>
           <Mark appear={interpolate(f, [0, 20], [0.3, 1], clamp)} y={2.2} scale={1.15} />
           {happy.map((p, i) => <Person key={i} {...p} x={[-4.2, -2.6, 2.6, 4.2][i]} z={-0.4} s={0.82} mood={1} pop={sp(f - 4 - i * 3, fps, 12)} />)}
         </Stage>
       </div>
-      <div style={{ position: "absolute", left: 0, right: 0, top: 590, textAlign: "center" }}>
-        <div style={{ font: `800 200px/0.9 ${F.display}`, letterSpacing: "-0.04em", color: C.ink, opacity: a, transform: `scale(${0.9 + 0.1 * a})` }}>écoute</div>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 500, textAlign: "center" }}>
+        <div style={{ font: `800 190px/0.9 ${F.display}`, letterSpacing: "-0.04em", color: C.ink, opacity: a, transform: `scale(${0.9 + 0.1 * a})` }}>écoute</div>
         <div style={{ font: `600 54px ${F.display}`, color: C.ink, marginTop: 16, opacity: b, letterSpacing: "-0.02em" }}>Every review, heard.</div>
         <div style={{ opacity: c, marginTop: 34 }}>
           <div style={{ font: `500 28px ${F.body}`, color: C.ink2 }}>Designed and built by</div>
@@ -680,7 +768,13 @@ function End({ s }) {
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: 22, padding: "0 70px" }}>
             {["Python", "SQL", "Machine learning", "AI agents", "GitHub Actions"].map((t) => <Pill key={t} size={22}>{t}</Pill>)}
           </div>
-          <div style={{ font: `600 26px ${F.body}`, color: C.cobalt, marginTop: 22 }}>github.com/narpatganwliya7/Voice-of-the-Customer-AI</div>
+          <div style={{ marginTop: 26, opacity: l, transform: `translateY(${(1 - l) * 16}px) scale(${0.94 + 0.06 * l})` }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 12, background: C.cobalt, color: "#fff", borderRadius: 999, padding: "14px 26px",
+              font: `600 27px ${F.body}`, boxShadow: `0 18px 36px -16px ${C.cobalt}` }}>
+              <Icon name="link" size={28} color="#fff" stroke={2.4} />{SITE_URL}
+            </span>
+            <div style={{ font: `600 24px ${F.body}`, color: C.ink, marginTop: 12 }}>Explore the live website: link in the post</div>
+          </div>
           <div style={{ font: `500 19px/1.35 ${F.body}`, color: C.ink3, marginTop: 14, padding: "0 90px" }}>Independent portfolio project, not affiliated with or endorsed by the brands shown. Based on public app reviews; estimates come from a statistical model. {data.credits || "Voice: ElevenLabs."}</div>
         </div>
       </div>
@@ -688,7 +782,7 @@ function End({ s }) {
   );
 }
 
-const SCENES = { hook: Hook, intro: Intro, stream: Stream, understand: Understand, deliveroo: Deliveroo, agent: Agent, brief: Brief, improve: Improve, cta: End };
+const SCENES = { hook: Hook, intro: Intro, stream: Stream, understand: Understand, deliveroo: Deliveroo, agent: Agent, brief: Brief, improve: Improve, site: Site, cta: End };
 
 export function Film({ captions = true }) {
   const frame = useCurrentFrame();

@@ -40,6 +40,8 @@ const PATHS = {
   spark: <path d="M12 3v5M12 16v5M3 12h5M16 12h5M6.3 6.3l2.8 2.8M14.9 14.9l2.8 2.8M17.7 6.3l-2.8 2.8M9.1 14.9l-2.8 2.8" />,
   alert: <><path d="M12 3.5L21.5 20h-19z" /><path d="M12 10v4.5M12 17.4v.1" /></>,
   bolt: <path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z" />,
+  link: <><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4L11.6 6" /><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.6-1.6" /></>,
+  lock: <><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" /></>,
 };
 export function Icon({ name, size = 24, color = "currentColor", stroke = 2, style }) {
   return (

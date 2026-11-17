@@ -1,8 +1,8 @@
 name: Render film
 
 # Renders the launch film in parallel chunks (Remotion + React Three Fiber on software GL),
-# joins them without re-encoding, and adds the mixed soundtrack from the private data store.
-# Output: an artifact with the 2160x2700 master and a 1080x1350 copy for LinkedIn.
+# joins them without re-encoding and adds the mixed soundtrack (video/film/public/soundtrack.m4a).
+# Output: an artifact with the 2160x2700 master, and the 1080x1350 copy committed to assets/.
 on:
   workflow_dispatch:
     inputs:
@@ -10,15 +10,11 @@ on:
         description: "Render scale (2 = 2160x2700, 1 = 1080x1350)"
         default: "2"
       soundtrack:
-        description: "Mixed soundtrack on the private data store"
-        default: "video/audio/soundtrack.flac"
+        description: "Mixed soundtrack (AAC) in this repository"
+        default: "video/film/public/soundtrack.m4a"
 
 permissions:
   contents: read
-
-env:   # the private data store (see scripts/databranch.sh)
-  DATA_REPO: ${{ vars.DATA_REPO }}
-  DATA_TOKEN: ${{ secrets.DATA_TOKEN }}
 
 jobs:
   chunk:
@@ -64,11 +60,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      contents: read
+      contents: write   # commits the LinkedIn copy to assets/
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
-      - run: bash scripts/databranch.sh open
       - uses: actions/download-artifact@v4
         with:
           pattern: chunk-*
@@ -78,8 +73,8 @@ jobs:
         run: |
           ls chunks/chunk_*.mp4 | sort | sed "s|^|file '$PWD/|; s|$|'|" > list.txt
           ffmpeg -v error -f concat -safe 0 -i list.txt -c copy video_only.mp4
-          ffmpeg -v error -i video_only.mp4 -i "store/${{ inputs.soundtrack }}" -map 0:v -map 1:a -c:v copy \
-            -c:a aac -b:a 256k -ar 48000 -shortest -movflags +faststart ecoute_film_master.mp4
+          ffmpeg -v error -i video_only.mp4 -i "${{ inputs.soundtrack }}" -map 0:v -map 1:a -c:v copy \
+            -c:a copy -shortest -movflags +faststart ecoute_film_master.mp4
           ffmpeg -v error -i ecoute_film_master.mp4 -vf "scale=1080:1350:flags=lanczos" -c:v libx264 -preset slow -crf 17 \
             -pix_fmt yuv420p -c:a copy -movflags +faststart ecoute_film_linkedin_1080x1350.mp4
           for f in ecoute_film_master.mp4 ecoute_film_linkedin_1080x1350.mp4; do
@@ -92,3 +87,11 @@ jobs:
             ecoute_film_master.mp4
             ecoute_film_linkedin_1080x1350.mp4
           retention-days: 30
+      - name: Commit the LinkedIn copy to assets/
+        run: |
+          cp ecoute_film_linkedin_1080x1350.mp4 assets/ecoute_film.mp4
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/ecoute_film.mp4
+          git commit -m "Film: rendered from ${GITHUB_SHA::7} (run ${{ github.run_id }})"
+          git pull --rebase -q origin main && git push origin HEAD:main
