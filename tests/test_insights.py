@@ -65,3 +65,51 @@ def test_build_insights(tmp_path):
     assert any(r["previous_version"] == "9.0" for r in rel)
     ov = json.loads((out / "overview.json").read_text())
     assert ov["reviews"] == 3000 and ov["brands"] == 2 and ov["label_sources"]["llm"] == 300
+
+
+def test_spike_baseline_counts_quiet_days_and_needs_history(tmp_path):
+    import duckdb
+    con = duckdb.connect()
+    days = pd.date_range("2026-01-01", periods=40, freq="D")
+    rows = []
+    for d in days:  # one negative review every 4th day, then a burst on the last day
+        n = 12 if d == days[-1] else (1 if d.day % 4 == 0 else 0)
+        rows += [{"brand": "X", "at": d, "sentiment": "negative"}] * n
+    con.register("facts_df", pd.DataFrame(rows))
+    con.execute("create table facts as select * from facts_df")
+    con.execute((insights.SQL_DIR / "06_spikes.sql").read_text())
+    last = con.execute("select baseline, baseline_days from daily where day = '2026-02-09'").fetchall()[0]
+    assert last[1] == 28 and abs(last[0] - 7 / 28) < 0.05  # quiet days count as zero, 28 calendar days
+    assert con.execute("select count(*) from spikes where day = '2026-02-09'").fetchall()[0][0] == 1
+    early = con.execute("select count(*) from spikes where day < '2026-01-14'").fetchall()[0][0]
+    assert early == 0  # no spike is called before 14 days of history exist
+
+
+def test_release_radar_compares_with_the_previous_version_number(tmp_path):
+    import duckdb
+    con = duckdb.connect()
+    rows = []
+    for v, first, n in (("11.7.1", "2026-01-02", 30), ("11.6.0", "2026-01-03", 30), ("11.7.2", "2026-02-01", 30)):
+        rows += [{"brand": "X", "app_version": v, "at": pd.Timestamp(first), "source": "google_play", "rating": 3,
+                  "sentiment": "neutral", "after_update": False}] * n
+    con.register("facts_df", pd.DataFrame(rows))
+    con.execute("create table facts as select * from facts_df")
+    con.execute((insights.SQL_DIR / "05_releases.sql").read_text())
+    prev = dict(con.execute("select app_version, previous_version from releases").fetchall())
+    assert prev == {"11.6.0": None, "11.7.1": "11.6.0", "11.7.2": "11.7.1"}
+
+
+def test_public_bundle_masks_staff_names_and_keeps_quotes_short():
+    from ecoute.site import make_public
+    bundle = {"brands": [{"name": "Engie", "quotes": [{"text": "Merci à la conseillère Julie pour son aide"},
+                                                     {"text": "aide d'une conseillère Engie, merci"}]}],
+              "ticker": [{"t": "Merci Beaucoup, super appli"}, {"t": "mot " * 120}],
+              "agent": [{"evidence": [{"text": "le livreur Karim était absent"}],
+                         "steps": [{"result_preview": "Monsieur Dupont m'a raccroché"}]}]}
+    out = make_public(bundle)
+    q = [x["text"] for x in out["brands"][0]["quotes"]]
+    assert q == ["Merci à la conseillère [name] pour son aide", "aide d'une conseillère Engie, merci"]
+    assert out["ticker"][0]["t"] == "Merci Beaucoup, super appli"
+    assert len(out["ticker"][1]["t"]) <= 201 and out["ticker"][1]["t"].endswith("…")
+    assert out["agent"][0]["evidence"][0]["text"] == "le livreur [name] était absent"
+    assert "Dupont" not in out["agent"][0]["steps"][0]["result_preview"]

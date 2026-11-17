@@ -1,7 +1,7 @@
 """Review store: one Parquet file per brand, deduplicated by review_id, plus a JSONL run log.
 
-The store lives on the repo's `data` branch (see scripts/databranch.sh), so `main` stays
-code-only. One file per brand keeps every file small and every write cheap.
+The store lives in a separate private repository (see scripts/databranch.sh), so this public
+repository holds code only. One file per brand keeps every file small and every write cheap.
 """
 from __future__ import annotations
 

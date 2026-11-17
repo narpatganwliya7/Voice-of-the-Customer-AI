@@ -79,3 +79,15 @@ def test_score_run_prefers_llm_labels(tmp_path):
     assert list(out.review_id) == list(reviews.review_id)
     assert sorted(json.loads(out.competitors[1])) == ["Free", "SFR"]
     assert (tmp_path / "model" / "report.json").exists()
+
+
+def test_heldout_reviews_never_shape_the_vocabulary(tmp_path):
+    reviews, labels = make_data()
+    gold = labels[labels["sample"] == "gold"].review_id
+    marker = "zxqvocabmarker"  # a word that only appears in held-out reviews
+    reviews.loc[reviews.review_id.isin(gold), "text"] += f" {marker} {marker} {marker}"
+    emb = classify.Embeddings(tmp_path, embed_fn=fake_embed)
+    model, rep = classify.train(reviews, labels, emb)
+    vocab = model["featurizer"].tfidf.vocabulary_
+    assert not any(marker in w for w in vocab)
+    assert "sentiment_macro_f1" in rep["heldout"]

@@ -1,0 +1,5 @@
+# Training and scoring the local classifier (python -m ecoute score) also needs the embedding model.
+# CPU build of PyTorch keeps the install small:
+#   pip install -r requirements.txt -r requirements-ml.txt --extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.*
+sentence-transformers>=3

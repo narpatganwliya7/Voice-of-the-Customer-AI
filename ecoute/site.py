@@ -3,12 +3,65 @@ from __future__ import annotations
 
 import json
 import random
+import re
 from pathlib import Path
 
 import pandas as pd
 
 from .common import now, slug
 from .store import Store
+
+
+# Reviews sometimes name the employee who helped ("merci à Julie", "le vendeur Karim"): that is a
+# third person's data, so the public bundle masks it. Quotes are also kept short.
+_ROLE = r"vendeu(?:r|se)|conseill(?:er|ère)|technicien(?:ne)?|livreur|chauffeur|caissi(?:er|ère)|hôtesse|docteur|dr\.?"
+PERSON_RX = re.compile(r"((?i:(?:merci|bravo)\s+(?:à|a|au|aux)?\s*(?:la |le |l')?(?:" + _ROLE + r")?\s*|"
+                       r"(?:" + _ROLE + r"|monsieur|madame|mme|m\.)\s+))"
+                       r"([A-ZÀ-Ý][a-zà-ÿ]+(?:-[A-ZÀ-Ý][a-zà-ÿ]+)?(?: [A-ZÀ-Ý][a-zà-ÿ]+)?)")
+QUOTE_MAX = 200
+NOT_NAMES = frozenset("beaucoup bien bcp super encore vraiment infiniment pour à a tous toutes tout la le les "
+                      "votre vos de du des pour l'appli application appli service équipe equipe".split())
+
+
+def mask_people(text: str, keep: frozenset = frozenset()) -> str:
+    """Replace a person's name after "merci à", "le vendeur", "Madame"... Brand names in `keep` stay."""
+    def sub(m):
+        name = m.group(2)
+        first = name.split()[0].split("-")[0].lower()
+        return m.group(0) if first in keep or first in NOT_NAMES else m.group(1) + "[name]"
+    return PERSON_RX.sub(sub, text)
+
+
+def public_quote(text: str, limit: int = QUOTE_MAX, keep: frozenset = frozenset()) -> str:
+    text = mask_people(str(text or ""), keep).strip()
+    if len(text) > limit:
+        text = text[:limit].rsplit(" ", 1)[0].rstrip(" ,;:.—-") + "…"
+    return text
+
+
+def make_public(bundle: dict) -> dict:
+    """What may leave the private store: short, anonymous quotes; no employee names."""
+    keep = frozenset(w.lower() for b in bundle.get("brands", []) for w in re.split(r"[\s.]+", b.get("name", "")) if w)
+    for b in bundle.get("brands", []):
+        for q in b.get("quotes", []):
+            q["text"] = public_quote(q["text"], keep=keep)
+    for r in bundle.get("ticker", []):
+        r["t"] = public_quote(r["t"], keep=keep)
+    for run in bundle.get("agent", []):
+        for e in run.get("evidence") or []:
+            e["text"] = public_quote(e["text"], keep=keep)
+        for st in run.get("steps") or []:
+            if st.get("result_preview"):
+                st["result_preview"] = mask_people(st["result_preview"], keep)
+    return bundle
+
+
+def publish(src: Path, out: Path) -> dict:
+    """Copy a bundle built in the private store to the public website, applying make_public."""
+    bundle = make_public(json.loads(Path(src).read_text()))
+    Path(out).parent.mkdir(parents=True, exist_ok=True)
+    Path(out).write_text(json.dumps(bundle, ensure_ascii=False, default=str))
+    return {"out": str(out), "built_at": bundle.get("built_at"), "bytes": Path(out).stat().st_size}
 
 
 def _load(d: Path, name: str, default):
@@ -51,7 +104,7 @@ def build(store: Path, out: Path) -> dict:
     brands = []
     for name, card in sorted(score.items()):
         w = weekly[weekly.brand == name].sort_values("week").tail(26) if len(weekly) else pd.DataFrame()
-        rel = releases[releases.brand == name].sort_values("first_seen").tail(6) if len(releases) else pd.DataFrame()
+        rel = releases[releases.brand == name].tail(6) if len(releases) else pd.DataFrame()  # already in version order
         app = next((a for k, a in apps.items() if not k.startswith("_") and a.get("name") == name), {})
         brands.append({
             "id": slug(name), "name": name, **{k: v for k, v in card.items() if k != "brand"},
@@ -79,6 +132,7 @@ def build(store: Path, out: Path) -> dict:
         "ticker": ticker(store),
         "runs": [json.loads(x) for x in (store / "runs.jsonl").read_text().splitlines()[-30:]] if (store / "runs.jsonl").exists() else [],
     }
+    bundle = make_public(bundle)
     out.mkdir(parents=True, exist_ok=True)
     (out / "bundle.json").write_text(json.dumps(bundle, ensure_ascii=False, default=str))
     return {"brands": len(brands), "ticker": len(bundle["ticker"]), "bytes": (out / "bundle.json").stat().st_size}

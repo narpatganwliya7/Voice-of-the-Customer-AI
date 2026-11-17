@@ -125,7 +125,8 @@ def train(reviews: pd.DataFrame, labels: pd.DataFrame, emb: Embeddings, folds: i
     labels = unpack(labels)
     lab = labels.merge(reviews, on="review_id", suffixes=("", "_r"))
     train_df, gold_df = lab[lab["sample"] == "train"], lab[lab["sample"] == "gold"]
-    feat = Featurizer().fit(review_text(reviews))
+    # the vocabulary and IDF weights may learn from unlabelled reviews, but never from the held-out ones
+    feat = Featurizer().fit(review_text(reviews[~reviews.review_id.isin(gold_df.review_id)]))
     X = feat.transform(review_text(train_df), emb.get(train_df), train_df.rating)
     kf = KFold(folds, shuffle=True, random_state=7)
     model = {"featurizer": feat, "aspects": {}, "embed_model": emb.model, "trained_at": now().isoformat(),
@@ -183,7 +184,8 @@ def train(reviews: pd.DataFrame, labels: pd.DataFrame, emb: Embeddings, folds: i
         report["aspect_polarity"] = {"accuracy": round(accuracy_score(ys, pred), 3), "pairs": len(ys)}
         model["polarity"] = clf.fit(Xp, ys)
 
-    # 4. held-out check: the gold set was never used for training or tuning
+    # 4. held-out check: these reviews (labelled by the same LLM) were never used for training,
+    #    tuning or fitting the vocabulary
     if len(gold_df):
         report["heldout"] = evaluate(model, gold_df, emb)
     return model, report
@@ -208,6 +210,7 @@ def evaluate(model: dict, labelled: pd.DataFrame, emb: Embeddings) -> dict:
         out["aspect_micro_f1"] = round(f1_score(Y, P, average="micro", zero_division=0), 3)
         out["aspect_macro_f1"] = round(f1_score(Y, P, average="macro", zero_division=0), 3)
     out["sentiment_accuracy"] = round(accuracy_score(labelled.sentiment, pred.sentiment), 3)
+    out["sentiment_macro_f1"] = round(f1_score(labelled.sentiment, pred.sentiment, average="macro", zero_division=0), 3)
     out["churn_accuracy"] = round(accuracy_score(labelled.churn, pred.churn), 3)
     return out
 

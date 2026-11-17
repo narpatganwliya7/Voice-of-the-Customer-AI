@@ -24,7 +24,8 @@ from .llm import LLMError, QuotaExhausted
 from .taxonomy import ASPECTS
 
 log = logging.getLogger(__name__)
-MAX_STEPS = 9
+MAX_TURNS = 9         # model replies per investigation
+MAX_TOOL_CALLS = 6    # investigation tool calls (run_sql, search_reviews, key_drivers); submit_brief is extra
 SAFE_SQL = re.compile(r"^\s*(select|with)\b", re.I)
 BLOCKED = re.compile(r"\b(insert|update|delete|drop|create|alter|attach|copy|export|install|load|pragma|set|call)\b|read_|glob\(|;", re.I)
 
@@ -73,7 +74,8 @@ Rules:
 - Read real reviews before concluding; cite 2 to 4 review_ids as evidence.
 - Separate what the data shows from what you infer. Say "likely" when inferring.
 - Recommendations must be concrete and owned by a team (Mobile, Payments, IT security, Customer service, Product, Ops).
-- Be efficient: at most 6 tool calls before submitting. Write in clear business English."""
+- Be efficient: at most 6 investigation tool calls, then submit_brief. Write in clear business English.
+- Quoted reviews support a finding but do not prove its cause on their own: say what they show."""
 
 
 class Toolbox:
@@ -145,8 +147,8 @@ class Analyst:
     def investigate(self, case: dict) -> dict:
         tools = Toolbox(self.con, self.store)
         contents = [{"role": "user", "parts": [{"text": "Case to investigate:\n" + json.dumps(case, ensure_ascii=False, default=str)}]}]
-        steps, brief, started = [], None, now()
-        for _ in range(MAX_STEPS):
+        steps, brief, started, used = [], None, now(), 0
+        for _ in range(MAX_TURNS):
             content = self.llm.chat(SYSTEM, contents, TOOLS)
             contents.append(content)
             calls = [p["functionCall"] for p in content.get("parts", []) if "functionCall" in p]
@@ -162,10 +164,14 @@ class Analyst:
                     brief = args
                     result = {"ok": True}
                 elif name in ("run_sql", "search_reviews", "key_drivers"):
-                    try:
-                        result = getattr(tools, name)(**args)
-                    except TypeError as e:
-                        result = {"error": f"bad arguments: {e}"}
+                    used += 1  # counted per call, so several calls in one reply all count
+                    if used > MAX_TOOL_CALLS:
+                        result = {"error": f"tool budget of {MAX_TOOL_CALLS} calls used: call submit_brief now with what you have"}
+                    else:
+                        try:
+                            result = getattr(tools, name)(**args)
+                        except TypeError as e:
+                            result = {"error": f"bad arguments: {e}"}
                 else:
                     result = {"error": f"unknown tool {name}"}
                 steps.append({"type": "tool", "tool": name, "args": args, "thought": thought[:300],
@@ -178,7 +184,8 @@ class Analyst:
         return {"case": case, "brief": brief, "evidence": [{"review_id": k, "text": v} for k, v in verified.items()],
                 "evidence_verified": bool(brief) and bool(verified) and len(verified) == len(brief.get("evidence_review_ids", [])),
                 "steps": steps, "model": getattr(self.llm, "model", "?"), "started": started.isoformat(),
-                "finished": now().isoformat(), "status": "filed" if brief else "incomplete"}
+                "finished": now().isoformat(), "status": "filed" if brief else "incomplete",
+                "tool_calls": min(used, MAX_TOOL_CALLS)}
 
 
 def _preview(result: dict) -> str:

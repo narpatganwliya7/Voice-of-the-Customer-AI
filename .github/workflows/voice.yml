@@ -29,7 +29,7 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read   # data is saved to the private store with DATA_TOKEN, not to this repository
 
 concurrency:
   group: data-branch

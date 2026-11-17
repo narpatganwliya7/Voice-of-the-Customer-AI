@@ -1,4 +1,4 @@
-# Data lives on the `data` branch, never on main
+# Raw data lives in the private data repository (scripts/databranch.sh), never here
 store/
 *.parquet
 *.tmp

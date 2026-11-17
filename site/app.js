@@ -33,6 +33,9 @@ function init() {
   $("built").textContent = "Data built on " + new Date(B.built_at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
 }
 
+const weakTopics = (c) => Object.entries(c.aspects || {}).filter(([, v]) => v.f1 != null).sort((a, b) => a[1].f1 - b[1].f1).slice(0, 3)
+  .map(([k, v]) => `${esc(label(k))} (F1 ${fmt.s(v.f1)})`).join(", ");
+
 /* ---------- status strip: honest about liveness ---------- */
 function liveStrip() {
   const runs = B.runs || [];
@@ -44,6 +47,7 @@ function liveStrip() {
   const parts = [`<span><span class="dot ${live ? "on" : ""}"></span>${live ? "Live: new reviews are collected every few minutes" : "Showcase mode: live collection is paused"}</span>`];
   if (last) parts.push(`<span>Last collection ${new Date(last.finished).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })} UTC, ${fmt.n(last.total_reviews)} reviews stored</span>`);
   if (lastInc) parts.push(`<span>Measured capture delay in the last live run: ${lastInc.capture_lag_min.median} min (median)</span>`);
+  if (!live && B.overview.last_review) parts.push(`<span>Snapshot: reviews up to ${esc(B.overview.last_review)}</span>`);
   $("liveStrip").innerHTML = parts.join("");
 }
 
@@ -129,7 +133,8 @@ function explorer() {
     $("exName").textContent = b.name;
     $("exSector").textContent = SECTOR[b.sector] || b.sector;
     $("exRating").innerHTML = `${fmt.s(b.avg_rating, 2)}<span style="color:${RATING[Math.max(1, Math.round(b.avg_rating || 1))]}">★</span> <small>average, last ${B.overview.window_days} days</small>`;
-    $("exWindow").textContent = `${fmt.n(b.reviews)} reviews in the window${b.store_rating ? `; Google Play store rating ${fmt.s(b.store_rating, 1)}★` : ""}`;
+    $("exWindow").textContent = `${fmt.n(b.reviews)} reviews in the window${b.store_rating ? `; Google Play store rating ${fmt.s(b.store_rating, 1)}★` : ""}`
+      + (b.reviews < 150 ? ". Small sample: shares are indicative and topic estimates need 150+ reviews" : "");
     $("exKv").innerHTML = [
       ["Negative reviews", fmt.pct(b.negative_share)], ["Say they are leaving", fmt.pct(b.leaving_share, 1)],
       ["Critical (money, access, fraud)", fmt.pct(b.critical_share, 1)], ["Problem after an app update", fmt.pct(b.after_update_share, 1)],
@@ -141,7 +146,7 @@ function explorer() {
     $("exBars").innerHTML = b.drivers.length ? b.drivers.slice(0, 7).map((d, i) => `
       <div class="bar"><span>${esc(d.label)}<small>${fmt.pct(d.prevalence, 1)} of reviews, −${fmt.s(d.impact, 1)}★ each</small></span>
       <span class="track"><span class="fill" style="width:${(100 * d.stars_lost) / maxLost}%;background:${ramp[i]}"></span></span>
-      <span class="val" style="color:${i ? COLOR.ink2 : COLOR.r1}">−${fmt.s(d.stars_lost, 2)}★</span></div>`).join("") : `<p class="empty">Not enough recent reviews.</p>`;
+      <span class="val" style="color:${i ? COLOR.ink2 : COLOR.r1}">−${fmt.s(d.stars_lost, 2)}★</span></div>`).join("") : `<p class="empty">Not enough recent reviews: topic estimates need at least 150 in the window.</p>`;
     $("wiTopic").innerHTML = b.drivers.map((d, i) => `<option value="${i}">${esc(d.label)}</option>`).join("");
     whatIf();
     const q = b.quotes || [];
@@ -279,14 +284,15 @@ function agent() {
     $("term").innerHTML = `<div class="head"><i></i>Écoute agent, ${esc(run.case.brand)}</div>` + run.steps.map((s) => {
       if (s.type === "note") return `<p class="s th">${esc(s.text)}</p>`;
       const args = s.tool === "run_sql" ? s.args.query : Object.entries(s.args || {}).map(([k, v]) => `${k}: ${v}`).join(", ");
-      return `<p class="s">${s.thought ? `<span class="th">${esc(s.thought)}</span>\n` : ""}<span class="tool">${esc(s.tool)}</span> <span class="arg">${esc(args).slice(0, 600)}</span>\n<span class="res">${esc(s.result_preview).slice(0, 300)}</span></p>`;
+      return `<p class="s">${s.thought ? `<span class="th">${esc(s.thought)}</span>\n` : ""}<span class="tool">${esc(s.tool)}</span> <span class="arg">${esc(String(args).slice(0, 600))}</span>\n<span class="res">${esc(String(s.result_preview).slice(0, 300))}</span></p>`;
     }).join("");
     const b = run.brief;
     if (!b) { $("brief").innerHTML = `<p class="empty">This investigation did not finish (free quota or step limit reached).</p>`; return; }
     $("brief").innerHTML = `<span class="conf">Confidence: ${esc(b.confidence)}</span><h4>${esc(b.headline)}</h4>
       <dl><div><dt>What happened</dt><dd>${esc(b.what_happened)}</dd></div><div><dt>Likely root cause</dt><dd>${esc(b.root_cause)}</dd></div><div><dt>Impact</dt><dd>${esc(b.impact)}</dd></div></dl>
-      <h3>Recommended actions</h3>${(b.actions || []).map((a) => `<div class="act"><img src="${TEAM_IMG(a.team)}" alt="" width="46" height="46"><div><b>${esc(a.action)}</b><small>${esc(a.team)}${a.expected_effect ? `: ${esc(a.expected_effect)}` : ""}</small></div></div>`).join("")}
+      <h3>Recommended actions</h3>${(b.actions || []).map((a) => `<div class="act"><img src="${TEAM_IMG(a.team)}" alt="" width="46" height="46"><div><b>${esc(a.action)}</b><small>${esc(a.team)}${a.expected_effect ? `: ${esc(a.expected_effect)} (agent's estimate)` : ""}</small></div></div>`).join("")}
       <h3 style="margin-top:18px">Evidence ${run.evidence_verified ? `<span class="ok">every cited review was read by the agent</span>` : ""}</h3>
+      <p class="note">These reviews support the finding; on their own they do not prove its cause.</p>
       ${(run.evidence || []).map((e) => `<p class="ev" lang="fr">“${esc(e.text.slice(0, 260))}”</p>`).join("") || `<p class="empty">No checked evidence.</p>`}`;
   }
 }
@@ -306,7 +312,8 @@ function method() {
     <tr><td>Topic detection, micro F1</td><td>${fmt.s(c.aspect_micro_f1)}</td><td>${fmt.s(h.aspect_micro_f1)}</td></tr>
     <tr><td>Topic detection, macro F1</td><td>${fmt.s(c.aspect_macro_f1)}</td><td>${fmt.s(h.aspect_macro_f1)}</td></tr>
     <tr><td>Overall tone, accuracy</td><td>${fmt.s((c.sentiment || {}).accuracy)}</td><td>${fmt.s(h.sentiment_accuracy)}</td></tr>
+    <tr><td>Overall tone, macro F1</td><td>${fmt.s((c.sentiment || {}).macro_f1)}</td><td>${h.sentiment_macro_f1 != null ? fmt.s(h.sentiment_macro_f1) : "–"}</td></tr>
     <tr><td>Leaving the company, F1</td><td>${fmt.s((c.churn || {}).leaving_company_f1)}</td><td>–</td></tr>
     <tr><td>Topic polarity, accuracy</td><td>${fmt.s((c.aspect_polarity || {}).accuracy)}</td><td>–</td></tr>
-    </tbody></table><p class="note">Trained on ${fmt.n(c.n_train)} AI-labelled reviews; ${fmt.n(c.n_heldout)} unseen reviews were never used for training or tuning. The figures measure agreement with the AI labels.</p>`;
+    </tbody></table><p class="note">Trained on ${fmt.n(c.n_train)} AI-labelled reviews; ${fmt.n(c.n_heldout)} unseen reviews were never used for training or tuning. The figures measure agreement with the AI labels, not with human judgement. Accuracy flatters tone because most reviews are clearly negative or positive; macro F1 weighs the rare neutral and mixed ones equally. Weakest topics: ${weakTopics(c)}.</p>`;
 }

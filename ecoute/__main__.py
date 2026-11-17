@@ -28,7 +28,7 @@ def main() -> None:
     r.add_argument("--store", type=Path, default=Path("store"))
     r.add_argument("--brands", default="all")
 
-    lb = sub.add_parser("label", help="annotate the training + gold samples with a free LLM")
+    lb = sub.add_parser("label", help="annotate the training and held-out samples with a free LLM")
     lb.add_argument("--store", type=Path, default=Path("store"))
     lb.add_argument("--limit", type=int, default=5000)
     lb.add_argument("--batch", type=int, default=30)
@@ -50,6 +50,10 @@ def main() -> None:
     st = sub.add_parser("site", help="build the website data bundle")
     st.add_argument("--store", type=Path, default=Path("store"))
     st.add_argument("--out", type=Path, default=Path("store/site"))
+
+    pb = sub.add_parser("publish", help="copy the store's bundle to the public website (site/data), anonymised")
+    pb.add_argument("--src", type=Path, default=Path("store/site/bundle.json"))
+    pb.add_argument("--out", type=Path, default=Path("site/data/bundle.json"))
 
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -83,6 +87,9 @@ def main() -> None:
     elif args.cmd == "site":
         from . import site
         print(json.dumps(site.build(args.store, args.out), indent=2))
+    elif args.cmd == "publish":
+        from . import site
+        print(json.dumps(site.publish(args.src, args.out), indent=2))
     elif args.cmd == "resolve":
         apps = resolve_all(load_config(), collect.parse_brands(args.brands))
         apps["_resolved_at"] = now().isoformat()
@@ -137,7 +144,7 @@ def _summary_label(st: dict) -> None:
     import os
     path = os.environ.get("GITHUB_STEP_SUMMARY")
     text = (f"## Écoute annotation\n**{st['labelled']:,} reviews annotated** in {st['calls']} free LLM calls "
-            f"· {st['total_labelled']:,} labelled in total ({st['gold_labelled']} in the gold set) "
+            f"· {st['total_labelled']:,} labelled in total ({st['gold_labelled']} in the held-out set) "
             f"· {st['remaining']:,} remaining\n")
     if st.get("stopped"):
         text += f"\nStopped: {st['stopped']}\n"

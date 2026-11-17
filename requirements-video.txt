@@ -1,0 +1,7 @@
+# Film tooling in video/ (story, alignment, music and sound mix). The film itself is a Node project
+# in video/film (npm ci). ffmpeg must be on the PATH.
+-r requirements.txt
+numpy
+soundfile
+librosa>=0.10
+faster-whisper>=1.0   # alignment of the recorded narration

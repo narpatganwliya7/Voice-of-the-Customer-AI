@@ -8,4 +8,4 @@ select m.brand, m.aspect,
 from mentions m join n using (brand)
 where m.in_window
 group by m.brand, m.aspect
-order by m.brand, negative_share desc;
+order by m.brand, negative_share desc, m.aspect;

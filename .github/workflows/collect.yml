@@ -1,6 +1,7 @@
 name: Collect reviews
 
-# Live mode: uncomment `schedule` to capture new reviews every 10 minutes.
+# Collection runs on demand. The schedule below is switched off on purpose: the published website is a
+# snapshot. Uncommenting it gives continuous collection (each run costs Actions minutes).
 # Showcase mode (default): run on demand from the Actions tab.
 on:
   workflow_dispatch:
@@ -27,7 +28,7 @@ on:
   #   - cron: "*/10 * * * *"
 
 permissions:
-  contents: write
+  contents: read   # data is saved to the private store with DATA_TOKEN, not to this repository
 
 concurrency:
   group: data-branch   # every workflow that writes the private data store shares this queue

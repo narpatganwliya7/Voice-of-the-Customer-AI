@@ -1,7 +1,7 @@
 name: Save film to the private data store
 
-# After "Render film" succeeds: keeps the LinkedIn copy and a set of review frames on the
-# data branch, so the film can be checked frame by frame without downloading artifacts.
+# After "Render film" succeeds: keeps the LinkedIn copy and a set of review frames in the
+# private data store, so the film can be checked frame by frame without downloading artifacts.
 on:
   workflow_run:
     workflows: ["Render film"]
@@ -13,7 +13,7 @@ on:
         required: true
 
 permissions:
-  contents: write
+  contents: read   # data is saved to the private store with DATA_TOKEN, not to this repository
   actions: read
 
 concurrency:

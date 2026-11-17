@@ -66,3 +66,31 @@ def test_cases_are_prioritised(tmp_path):
     assert any(c["type"] == "top_driver" and c["brand"] == "SFR" for c in found)
     assert len({(c["type"], c["brand"]) for c in found}) == len(found)
     json.dumps(found)
+
+
+class GreedyLLM:
+    """Asks for many tools in one reply, then more: the budget must hold across and within replies."""
+    model = "greedy"
+
+    def __init__(self):
+        self.turn = 0
+
+    def chat(self, system, contents, tools):
+        self.turn += 1
+        if self.turn <= 2:
+            call = {"functionCall": {"name": "key_drivers", "args": {"brand": "SFR"}}}
+            return {"role": "model", "parts": [call] * 5}
+        return {"role": "model", "parts": [{"functionCall": {"name": "submit_brief", "args": {
+            "headline": "h", "what_happened": "w", "root_cause": "r", "impact": "i", "evidence_review_ids": [],
+            "actions": [], "confidence": "low"}}}]}
+
+
+def test_tool_budget_counts_every_call(tmp_path):
+    store = build_store(tmp_path)
+    insights.build(store)
+    res = agent.Analyst(GreedyLLM(), store).investigate({"type": "top_driver", "brand": "SFR"})
+    tool_steps = [s for s in res["steps"] if s["tool"] == "key_drivers"]
+    assert len(tool_steps) == 10  # all ten requests are logged...
+    refused = [s for s in tool_steps if "tool budget" in s["result_preview"]]
+    assert len(refused) == 10 - agent.MAX_TOOL_CALLS  # ...but only the first six ran
+    assert res["tool_calls"] == agent.MAX_TOOL_CALLS and res["status"] == "filed"

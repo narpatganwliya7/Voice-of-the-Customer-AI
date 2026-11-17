@@ -1,7 +1,9 @@
 """LLM-as-annotator.
 
 1. `make_samples`: a fixed, stratified training sample (every brand, every star rating)
-   plus a separate gold set that a human labels by hand to measure accuracy.
+   plus a separate held-out set (called "gold" in the data for historical reasons). Both are
+   labelled by the same LLM; the held-out set is never used for training, so the model's scores
+   on it measure agreement with the LLM annotator, not accuracy against human judgement.
 2. `run`: annotates pending reviews in batches with a free LLM, validates every answer
    against the taxonomy, saves progress often and resumes where it stopped.
 The labelled sample later trains a fast local classifier that scores every review.

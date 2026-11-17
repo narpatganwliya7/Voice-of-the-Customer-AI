@@ -34,8 +34,11 @@ def drivers(con, min_reviews: int = 150, ridge: float = 5.0) -> dict:
 
     impact      = stars a review loses when it complains about the topic (all else equal)
     prevalence  = share of reviews that complain about it
-    stars_lost  = impact x prevalence = how much the brand's average rating would rise
-                  if that topic stopped generating complaints
+    stars_lost  = impact x prevalence = the model's estimate of how much the brand's average
+                  rating would rise if that topic stopped generating complaints
+
+    These are associations in observational data, not measured causal effects: a topic can travel
+    with other problems the model does not see. The website labels them as estimates.
     """
     facts = con.execute("select review_id, brand, rating from facts where in_window").df()
     ments = con.execute("select review_id, aspect, polarity from mentions where in_window").df()

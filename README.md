@@ -26,7 +26,7 @@ film comes from the pipeline's own outputs.
 |---|---|
 | **127,479** real customer reviews | **41** brands across 8 sectors |
 | **15** customer-experience topics | **4,300** reviews annotated by a free AI model |
-| **0.66** topic F1 on 300 held-out reviews | **91%** tone accuracy on the same held-out set |
+| **0.66** topic micro F1 on 300 held-out reviews | **0.61** tone macro F1 (91% accuracy) |
 
 ---
 
@@ -96,28 +96,47 @@ see [Data and ethics](#data-and-ethics).
 | Topic detection, micro F1 | 0.65 | 0.66 |
 | Topic detection, macro F1 | 0.63 | 0.61 |
 | Overall tone, accuracy | 0.91 | 0.91 |
+| Overall tone, macro F1 | 0.61 | – |
 | Leaving the company, F1 | 0.50 | – |
 | Topic polarity, accuracy | 0.94 | – |
 
-These figures measure agreement with the AI annotator, not with human labels.
+These figures measure agreement with the AI annotator (Gemini), not with human labels: the 300
+held-out reviews were labelled by the same model and never used for training. Accuracy flatters tone
+because most reviews are clearly negative or positive; macro F1 counts the rare neutral and mixed ones
+equally. The weakest topics are account management (F1 0.44), trust and security (0.51) and features
+(0.52); the strongest are login and access (0.79) and customer service (0.75).
+
+The snapshot's model fitted its TF-IDF vocabulary on all review texts, held-out ones included (no
+labels). Training now fits it on non-held-out reviews only, so the next training run reports fully
+separated figures; the change cannot leak labels and is expected to move them very little.
 
 **Limits**
 - App reviews over-represent strong opinions: a signal, not a survey.
 - "Stars lost" comes from a regression: correlation, not proof of cause.
 - Capture latency is reported only from live runs that measured it. The site says when live collection is paused.
+- Complaint spikes compare a day with the 28 calendar days before it (quiet days count as zero) and need
+  14 days of history; the release radar compares each version with the next lower version number.
+- Brands with fewer than 150 reviews in the 60-day window get no topic estimates and are flagged as small samples.
+- The agent has a budget of 6 investigation tool calls, enforced in code. Quoted reviews support its
+  findings but do not prove a cause on their own; unfinished investigations are shown as unfinished.
 
 ---
 
 ## Run it
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt                       # collection, SQL, insights, tests
+pip install -r requirements-ml.txt --extra-index-url https://download.pytorch.org/whl/cpu   # training
 python -m ecoute collect --mode backfill --brands "Orange, SNCF Connect"
 GEMINI_API_KEY=... python -m ecoute label --limit 400
 python -m ecoute score --retrain && python -m ecoute insights
-python -m ecoute site --out store/site
+python -m ecoute site --out store/site                # bundle inside the private store
+python -m ecoute publish                              # anonymised copy for the website: site/data/bundle.json
 python -m pytest -q
 ```
+
+The website is a **snapshot**: `publish` copies a bundle into `site/data/` (masking employee names and
+trimming quotes to 200 characters), and the page shows the date of the last review it contains.
 
 Or from GitHub, in the **Actions** tab:
 
@@ -180,6 +199,21 @@ the same pipeline answers the same questions: what hurts, how much, since when, 
   data through the official Play Console and App Store Connect APIs.
 - Agent findings are worded as *likely* causes with the evidence they rest on, and "if fixed" ratings are
   upper-bound estimates from a regression, not forecasts.
+
+## Third-party software and assets
+
+| Item | Licence |
+|---|---|
+| D3 (vendored in `site/vendor/`) | ISC |
+| d3-sankey (vendored) | BSD-3-Clause |
+| Fonts: Bricolage Grotesque, Geist, Geist Mono | SIL Open Font License 1.1 |
+| google-play-scraper, DuckDB, pandas, scikit-learn | MIT / MIT / BSD-3 / BSD-3 |
+| paraphrase-multilingual-MiniLM-L12-v2 (sentence-transformers) | Apache-2.0 |
+| Remotion (film rendering) | Remotion licence: free for individuals and companies of up to 3 people |
+| three.js, React, React Three Fiber | MIT |
+| Narration and music | Generated with ElevenLabs (voice "Cyril", Eleven Music) and credited in the film |
+
+To have a quote removed (for example if you wrote it), open an issue with the brand and the text.
 
 ---
 
