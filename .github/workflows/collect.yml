@@ -30,8 +30,12 @@ permissions:
   contents: write
 
 concurrency:
-  group: data-branch   # every workflow that writes the data branch shares this queue
+  group: data-branch   # every workflow that writes the private data store shares this queue
   cancel-in-progress: false
+
+env:   # the private data store (see scripts/databranch.sh)
+  DATA_REPO: ${{ vars.DATA_REPO }}
+  DATA_TOKEN: ${{ secrets.DATA_TOKEN }}
 
 jobs:
   collect:
@@ -55,7 +59,7 @@ jobs:
           --since-days "${{ inputs.since_days || '180' }}"
           ${{ inputs.refresh_apps && '--refresh-apps' || '' }}
 
-      - name: Save to the data branch
+      - name: Save to the private data store
         run: |
           NEW=$(tail -n1 store/runs.jsonl | python -c "import json,sys;print(json.load(sys.stdin)['new_reviews'])")
           bash scripts/databranch.sh save "data: +$NEW reviews (run ${{ github.run_id }})"

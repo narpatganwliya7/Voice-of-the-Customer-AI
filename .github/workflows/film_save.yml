@@ -1,4 +1,4 @@
-name: Save film to the data branch
+name: Save film to the private data store
 
 # After "Render film" succeeds: keeps the LinkedIn copy and a set of review frames on the
 # data branch, so the film can be checked frame by frame without downloading artifacts.
@@ -19,6 +19,10 @@ permissions:
 concurrency:
   group: data-branch
   cancel-in-progress: false
+
+env:   # the private data store (see scripts/databranch.sh)
+  DATA_REPO: ${{ vars.DATA_REPO }}
+  DATA_TOKEN: ${{ secrets.DATA_TOKEN }}
 
 jobs:
   save:

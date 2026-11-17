@@ -1,7 +1,7 @@
 name: Render film
 
 # Renders the launch film in parallel chunks (Remotion + React Three Fiber on software GL),
-# joins them without re-encoding, and adds the mixed soundtrack from the data branch.
+# joins them without re-encoding, and adds the mixed soundtrack from the private data store.
 # Output: an artifact with the 2160x2700 master and a 1080x1350 copy for LinkedIn.
 on:
   workflow_dispatch:
@@ -10,11 +10,15 @@ on:
         description: "Render scale (2 = 2160x2700, 1 = 1080x1350)"
         default: "2"
       soundtrack:
-        description: "Mixed soundtrack on the data branch"
+        description: "Mixed soundtrack on the private data store"
         default: "video/audio/soundtrack.flac"
 
 permissions:
   contents: read
+
+env:   # the private data store (see scripts/databranch.sh)
+  DATA_REPO: ${{ vars.DATA_REPO }}
+  DATA_TOKEN: ${{ secrets.DATA_TOKEN }}
 
 jobs:
   chunk:

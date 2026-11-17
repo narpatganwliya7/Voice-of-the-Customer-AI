@@ -18,7 +18,7 @@ on:
         description: "Instead of the narration: one short sample per voice (ids separated by ;), or 'all' for every voice you added"
         default: ""
       source:
-        description: "align: a recording already on the data branch, cut into script lines"
+        description: "align: a recording already on the private data store, cut into script lines"
         default: "video/narration_source.mp3"
       model:
         description: "ElevenLabs model id (default eleven_multilingual_v2)"
@@ -34,6 +34,10 @@ permissions:
 concurrency:
   group: data-branch
   cancel-in-progress: false
+
+env:   # the private data store (see scripts/databranch.sh)
+  DATA_REPO: ${{ vars.DATA_REPO }}
+  DATA_TOKEN: ${{ secrets.DATA_TOKEN }}
 
 jobs:
   voice:
@@ -71,7 +75,7 @@ jobs:
           else
             python video/tts.py --engine "$ENGINE" --model "$MODEL" --out store/video/voice ${VOICE:+--voice "$VOICE"}
           fi
-      - name: Save to the data branch
+      - name: Save to the private data store
         if: ${{ !inputs.list }}
         run: |
           bash scripts/databranch.sh save "data: video narration (run ${{ github.run_id }})"

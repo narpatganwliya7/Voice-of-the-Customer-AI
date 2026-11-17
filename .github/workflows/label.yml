@@ -22,6 +22,10 @@ concurrency:
   group: data-branch
   cancel-in-progress: false
 
+env:   # the private data store (see scripts/databranch.sh)
+  DATA_REPO: ${{ vars.DATA_REPO }}
+  DATA_TOKEN: ${{ secrets.DATA_TOKEN }}
+
 jobs:
   label:
     runs-on: ubuntu-latest
@@ -44,7 +48,7 @@ jobs:
           LLM_MODEL: ${{ secrets.LLM_MODEL }}
         run: python -m ecoute label --store store --limit "${{ inputs.limit || '4300' }}" --batch "${{ inputs.batch || '40' }}"
 
-      - name: Save to the data branch
+      - name: Save to the private data store
         if: always()   # keep partial progress even if the run is interrupted
         run: |
           [ -f store/labels.parquet ] || exit 0

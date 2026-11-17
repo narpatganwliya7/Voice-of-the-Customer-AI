@@ -1,8 +1,10 @@
 # écoute. — Always-on Voice of the Customer
 
-**Every review, captured within minutes. Every issue, explained. Every fix, prioritised.**
+**Every review, heard. Every issue, explained. Every fix, prioritised.**
 
-*Écoute : l'écoute client en continu. Chaque avis capté en quelques minutes. Chaque irritant expliqué. Chaque action priorisée.*
+*Écoute : chaque avis entendu, chaque irritant expliqué, chaque action priorisée.*
+
+**[Live website](https://narpatganwliya7.github.io/Voice-of-the-Customer-AI/)** · **[Watch the 78-second film](assets/ecoute_film.mp4)**
 
 [![Tests](https://github.com/narpatganwliya7/Voice-of-the-Customer-AI/actions/workflows/tests.yml/badge.svg)](https://github.com/narpatganwliya7/Voice-of-the-Customer-AI/actions/workflows/tests.yml)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB)
@@ -10,7 +12,7 @@
 ![AI](https://img.shields.io/badge/AI-free%20tier%20only-3ddc97)
 ![Automation](https://img.shields.io/badge/runs%20on-GitHub%20Actions-2088FF)
 
-<p align="center"><img src="assets/film_preview.gif" width="360" alt="Opening seconds of the Écoute launch film"></p>
+<p align="center"><a href="assets/ecoute_film.mp4"><img src="assets/film_preview.gif" width="400" alt="The agent replaying its real investigation: SQL, a failed query it recovers from, the reviews it read, and the likely cause"></a><br><sub>The agent replaying its own logged investigation of a complaint spike. Click for the full film.</sub></p>
 
 Écoute is an AI agent that reads what customers of **41 French brands** write on Google Play and
 the App Store (banks, insurers, telecom operators, retailers, mobility, delivery, energy, health),
@@ -72,7 +74,9 @@ flowchart LR
 | **Investigate** | The analyst agent receives each spike or bad release, works with three tools (read-only SQL, review search, key drivers), must back every number with a tool result, and files a structured brief. Cited reviews are checked against what it actually read. |
 | **Show** | A static website (brand explorer, what-if simulator, pain map, switching map, release radar, agent console, method) and a launch film rendered from the same data, in which the agent replays its own logged investigation. |
 
-The data lives on the `data` branch so `main` stays code only.
+This repository holds the code, the website and the public data bundle (aggregates and short anonymous
+quotes). The raw reviews, labels and trained model live in a separate **private** data repository;
+see [Data and ethics](#data-and-ethics).
 
 ### Free AI only
 
@@ -119,9 +123,10 @@ Or from GitHub, in the **Actions** tab:
 
 | Workflow | What it does |
 |---|---|
-| **Collect reviews** | New reviews for all brands or a chosen few. Uncomment the schedule for live mode (every 10 minutes). |
+| **Collect reviews** | New reviews for all brands or a chosen few (a schedule can be switched on for continuous collection). |
 | **Annotate with free AI** | Labels the training sample; resumable when the free quota runs out. |
 | **Analyse** | Trains the classifier, scores every review, builds insights, lets the AI analyst investigate, builds the website data. |
+| **Render film** | Renders the film in 12 parallel chunks, joins them and adds the soundtrack. |
 | **Video narration** | Aligns the recorded narration to the script with faster-whisper (word timings drive the cuts and the French subtitles). Kokoro and the ElevenLabs API remain as fallbacks. |
 
 ### The film
@@ -142,6 +147,11 @@ Scenes are rendered one file each at 2160×2700 (Remotion, React Three Fiber, so
 without re-encoding, then muxed with the mixed soundtrack: voice EQ and compression, the music ducked
 under the voice, small effects on the cuts, two-pass loudness to −14 LUFS.
 
+Workflows read and write the private data store through `scripts/databranch.sh`. To run them in a
+fork, create your own private repository, set the `DATA_REPO` variable and a `DATA_TOKEN` secret
+(fine-grained token, Contents read/write on that repository). Without them the workflows start from an
+empty store and refuse to save, so raw reviews can never land in a public repository.
+
 ## Project layout
 
 ```
@@ -158,6 +168,18 @@ tests/         offline tests (no network)
 The taxonomy (reliability, login, payments, service, delivery, trust…) is industry-neutral. Point
 the collector at another set of apps (a car-maker's companion app, a SaaS product, a utility) and
 the same pipeline answers the same questions: what hurts, how much, since when, and who should fix it.
+
+## Data and ethics
+
+- **Public reviews only**, from the official app of each brand. Usernames, avatars and platform ids are
+  never stored; emails, phone numbers, IBANs and account numbers inside review text are masked.
+- **What is public here:** code, aggregated figures and about 300 short, anonymous quotes used by the
+  website and the film. **What is not:** the full review texts, labels and model, kept in a private repository.
+- Google Play has no official API for other companies' reviews, so collection uses an open-source scraper
+  at a polite rate. This is a non-commercial portfolio project; a product would use each company's own
+  data through the official Play Console and App Store Connect APIs.
+- Agent findings are worded as *likely* causes with the evidence they rest on, and "if fixed" ratings are
+  upper-bound estimates from a regression, not forecasts.
 
 ---
 
