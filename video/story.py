@@ -34,6 +34,24 @@ def src(s: str) -> str:
     return "Google Play" if s == "google_play" else "App Store"
 
 
+def why_story(brands):
+    """Counted versus priced: the brand whose most-mentioned problem is furthest from its costliest one."""
+    def top(x, key):
+        return max(x["drivers"], key=lambda d: d[key])
+    pool = [x for x in brands.values() if len(x["drivers"]) >= 3 and x["reviews"] >= 150
+            and top(x, "prevalence")["aspect"] != top(x, "stars_lost")["aspect"]]
+    x = max(pool, key=lambda x: top(x, "stars_lost")["stars_lost"] - top(x, "prevalence")["stars_lost"])
+    c, p = top(x, "prevalence"), top(x, "stars_lost")
+    q = next((q for q in x["quotes"] if q["kind"] == "pain" and q["aspect"] == p["aspect"]), None)
+    keep = ("aspect", "label", "prevalence", "stars_lost")
+    return {"brand": x["name"], "avg": x["avg_rating"], "potential": x["potential"], "reviews": x["reviews"],
+            "drivers": [{k: d[k] for k in keep} for d in x["drivers"][:6]],
+            "by_count": [{k: d[k] for k in keep} for d in sorted(x["drivers"], key=lambda d: -d["prevalence"])[:3]],
+            "counted": c["aspect"], "priced": p["aspect"], "ratio": round(p["stars_lost"] / c["stars_lost"], 1),
+            "disagree": len(pool), "eligible": sum(1 for v in brands.values() if len(v["drivers"]) >= 3 and v["reviews"] >= 150),
+            "quote": q and {"text": q["text"][:150], "rating": q["rating"], "source": q["source"], "day": str(q["day"])[:10]}}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--store", default="store")
@@ -175,6 +193,7 @@ def main():
                     "read": n_read, "evidence": evidence, "confidence": case["brief"]["confidence"]},
         "actions": actions,
         "improve": improve,
+        "why": why_story(brands),
         "stream": {"ratings": {int(k): int(v) for k, v in mix_.items()}, "google_play": int(stores.get("google_play", 0)),
                    "app_store": int(stores.get("app_store", 0))},
         "agent": {"model": case.get("model"), "case": {k: (str(v)[:10] if k == "day" else v) for k, v in case["case"].items()},
@@ -208,8 +227,9 @@ def main():
                   "Puis il rédige sa note. E.Leclerc : publier un correctif, et tester la connexion avant chaque version. Deliveroo : corriger d'abord les livraisons."),
         ("improve", f"Fix the problems Écoute found, and E.Leclerc's recent rating could climb from {lc['avg_rating']:.1f} to {lc_after:.1f} stars.",
                     f"Corrigez les problèmes trouvés par Écoute, et la note récente d'E.Leclerc pourrait passer de {fr(lc['avg_rating'])} à {fr(lc_after)} étoiles."),
-        ("site", "It's all on the Écoute website: pick any brand, see what's costing it stars, and read the agent's brief.",
-                 "Tout est sur le site d'Écoute : choisissez une marque, voyez ce qui lui coûte des étoiles, et lisez la note de l'agent."),
+        ("why", "Écoute doesn't just count complaints: it prices them in stars, and shows the evidence behind every finding.",
+                "Écoute ne se contente pas de compter les plaintes : il les chiffre en étoiles, et montre les preuves derrière chaque conclusion."),
+        ("site", "See it all on the website: pick any brand.", "Tout est sur le site : choisissez une marque."),
         ("cta", "Explore it yourself. Écoute. Every review, heard.", "Explorez-le vous-même. Écoute. Chaque avis, entendu."),
     ]
     assert abs(peak / base - 7) < 1, f"spike ratio changed: {peak / base:.1f}"  # the narration says seven-fold

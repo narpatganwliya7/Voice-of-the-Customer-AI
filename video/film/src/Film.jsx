@@ -5,6 +5,7 @@ import { Paper, Captions, ReviewCard, Headline, Pill, StarsInline, Star, Icon, B
 import { Stage, Person, CROWD, Mark, Columns, StarRow, ReviewStream, projector } from "./Clay.jsx";
 import { wordAt, agentTimes, briefTimes } from "./timeline.js";
 import data from "./data.json";
+import SITE_META from "../public/site/meta.json";
 
 loadFonts();
 const ease = Easing.bezier(...EASE.out);
@@ -653,13 +654,108 @@ function Improve({ s }) {
   );
 }
 
-/* 9 ─ The website: the real site, captured in a browser, explored in three beats */
+/* 9 ─ Counted versus priced: the same complaints, ranked two ways (real data) */
 const SITE_URL = "narpatganwliya7.github.io/Voice-of-the-Customer-AI";
-const SHOT = { w: 1280, h: 1120 };               // CSS size of every capture (taken at 3x)
-const CHIP = { x: 663.6, y: 422.6 };             // centre of the Deliveroo chip in the explorer capture
-const BARS = { x: 607, y: 812 };                 // "Stars lost per topic" card
-const BRIEF = { x: 940, y: 470 };                // the brief's headline in the agent capture
+const STAR_D = "M12 2.6l2.82 5.92 6.5.83-4.77 4.5 1.21 6.45L12 17.17 6.24 20.3l1.21-6.45-4.77-4.5 6.5-.83z";
+const HATCH = [1, 0.78, 0.6, 0.47, 0.37, 0.29, 0.23];
+const redA = (a) => `rgba(238,65,54,${a})`;
 
+/** The website's star meter: five stars filled to the rating, then the stars each problem costs. */
+function StarMeter({ avg, segs, width = 760, t = 1, tSeg = 1, id = "sm" }) {
+  const S = 100, g = 16, W = 5 * S + 4 * g;
+  const x = (v) => { v = Math.max(0, Math.min(5, v)); const i = Math.min(4, Math.floor(v)); return i * (S + g) + Math.min(1, v - i) * S; };
+  let cum = avg;
+  const parts = segs.map((d, k) => { const p = { a: cum, z: cum + d, k }; cum += d; return p; });
+  return (
+    <svg width={width} height={(width * S) / W} viewBox={`0 0 ${W} ${S}`} style={{ display: "block", overflow: "visible" }}>
+      <defs>
+        <clipPath id={`${id}c`}>{[0, 1, 2, 3, 4].map((i) => <path key={i} d={STAR_D} transform={`translate(${i * (S + g) - 0.5}, -2) scale(${(S + 1) / 24})`} />)}</clipPath>
+        {parts.map((p) => (
+          <pattern key={p.k} id={`${id}p${p.k}`} width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="9" height="9" fill={redA((HATCH[p.k] ?? 0.2) * 0.3)} /><rect width="3.6" height="9" fill={redA(HATCH[p.k] ?? 0.2)} />
+          </pattern>
+        ))}
+      </defs>
+      <g clipPath={`url(#${id}c)`}>
+        <rect width={W} height={S} fill="#E4E7ED" />
+        <rect width={x(avg) * t} height={S} fill={RATING[Math.round(avg)]} />
+        {parts.map((p, i) => {
+          const r = clamp01(tSeg * parts.length - i);
+          return <rect key={p.k} x={x(p.a)} width={(x(p.z) - x(p.a)) * r} height={S} fill={`url(#${id}p${p.k})`} />;
+        })}
+      </g>
+    </svg>
+  );
+}
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+function Why({ s }) {
+  const f = useCurrentFrame();
+  const { width: W, fps } = useVideoConfig();
+  const Y = data.why;
+  const count = wordAt(s, /^count/i, 40), prices = wordAt(s, /^prices/i, 84), shows = wordAt(s, /^shows/i, 130);
+  const head = sp(f, fps, 18);
+  const left = sp(f - (count - 16), fps, 17);
+  const right = sp(f - (prices - 10), fps, 17);
+  const ev = sp(f - (shows - 6), fps, 16);
+  const byStars = [...Y.drivers].sort((a, b) => b.stars_lost - a.stars_lost).slice(0, 3);
+  const row = (d, i, key, max, hl, color, a, unit) => {
+    const g = ramp(f, 0, 1) * a;
+    return (
+      <div key={d.aspect} style={{ display: "grid", gridTemplateColumns: "250px 1fr 110px", gap: 16, alignItems: "center", height: 48, opacity: Math.min(1, a * 1.5),
+        transform: `translateY(${(1 - a) * (12 + i * 6)}px)` }}>
+        <span style={{ font: `${hl ? 650 : 500} 27px ${F.body}`, color: hl ? C.ink : C.ink2 }}>{d.label}</span>
+        <span style={{ height: 16, borderRadius: 8, background: "#E9EBF0", overflow: "hidden" }}>
+          <span style={{ display: "block", height: "100%", width: `${(100 * d[key] / max) * clamp01(a * 1.2 - i * 0.12)}%`, borderRadius: 8, background: hl ? color : "#C5CAD4" }} />
+        </span>
+        <span style={{ font: `800 30px ${F.display}`, textAlign: "right", color: hl ? color : C.ink2, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 3, fontVariantNumeric: "tabular-nums" }}>
+          {unit === "pct" ? `${(100 * d[key]).toFixed(1)}%` : <>−{d[key].toFixed(2)}<Star size={22} color={hl ? color : C.ink2} /></>}
+        </span>
+      </div>
+    );
+  };
+  const card = { background: C.card, borderRadius: 16, padding: "24px 30px 18px", boxShadow: "0 1px 2px rgba(20,22,28,.06), 0 30px 60px -32px rgba(28,34,52,.4)" };
+  return (
+    <AbsoluteFill>
+      <Glow items={[{ x: W * 0.75, y: 760, r: 380, c: C.r1, o: 0.08 }]} />
+      <Headline appear={head} size={84} sub={`The same complaints, ranked two ways: ${Y.brand}, last 60 days`}>Not just counted. Priced.</Headline>
+      <div style={{ position: "absolute", left: 56, right: 56, top: 318, opacity: Math.min(1, left * 1.4), transform: `translateY(${(1 - left) * 40}px)` }}>
+        <div style={card}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+            <span style={{ font: `700 30px ${F.display}`, color: C.ink }}>Ranked by mentions</span>
+            <span style={{ font: `500 21px ${F.body}`, color: C.ink2 }}>share of reviews</span>
+          </div>
+          {Y.by_count.map((d, i) => row(d, i, "prevalence", Y.by_count[0].prevalence, d.aspect === Y.counted || d.aspect === Y.priced, d.aspect === Y.priced ? C.r1 : C.ink, left, "pct"))}
+        </div>
+      </div>
+      <div style={{ position: "absolute", left: 56, right: 56, top: 612, opacity: Math.min(1, right * 1.4), transform: `translateY(${(1 - right) * 40}px)` }}>
+        <div style={card}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+            <span style={{ font: `700 30px ${F.display}`, color: C.ink }}>Ranked by stars lost</span>
+            <span style={{ font: `500 21px ${F.body}`, color: C.ink2 }}>{Y.avg.toFixed(2)}★ in recent written reviews</span>
+          </div>
+          <StarMeter id="why" avg={Y.avg} segs={byStars.map((d) => d.stars_lost)} width={600} t={ramp(f, prices - 6, prices + 18)} tSeg={ramp(f, prices + 10, prices + 40)} />
+          <div style={{ height: 14 }} />
+          {byStars.map((d, i) => row(d, i, "stars_lost", byStars[0].stars_lost, d.aspect === Y.priced, C.r1, right, "stars"))}
+        </div>
+      </div>
+      {Y.quote && (
+        <div style={{ position: "absolute", left: 56, right: 56, top: 1044, opacity: Math.min(1, ev * 1.4), transform: `translateY(${(1 - ev) * 30}px) scale(${0.96 + 0.04 * ev})`, transformOrigin: "50% 0%" }}>
+          <div style={{ display: "flex", gap: 18, alignItems: "center", background: "#FDF1F0", borderRadius: 16, padding: "16px 22px" }}>
+            <Badge name="search" size={44} bg={C.r1} />
+            <div lang="fr" style={{ font: `500 23px/1.35 ${F.body}`, color: C.ink }}>
+              <div style={{ font: `600 19px ${F.body}`, color: C.r1, marginBottom: 4 }}>The evidence behind −{byStars[0].stars_lost.toFixed(2)}★: a real review</div>
+              “{Y.quote.text.split("—")[0].trim()}: {Y.quote.text.split("—")[1]?.trim().split(".")[0]}.”
+            </div>
+          </div>
+        </div>
+      )}
+    </AbsoluteFill>
+  );
+}
+
+/* 10 ─ The website: the real Star Ledger site, choosing a brand */
+const SHOT = { w: 1280, h: 1000 };
 function Cursor({ x, y, press }) {
   return (
     <svg width="34" height="40" viewBox="0 0 34 40" style={{ position: "absolute", left: x - 4, top: y - 2, transform: `scale(${1 - press * 0.12})`, transformOrigin: "4px 2px",
@@ -668,71 +764,49 @@ function Cursor({ x, y, press }) {
     </svg>
   );
 }
-
 function Site({ s }) {
   const f = useCurrentFrame();
   const { width: W, fps } = useVideoConfig();
-  const pick = wordAt(s, /^pick/i, 62), see = wordAt(s, /^see/i, 96), read = wordAt(s, /^read/i, 150);
+  const M = SITE_META;
+  const pick = wordAt(s, /^pick/i, 56);
   const head = sp(f, fps, 18);
   const win = sp(f - 2, fps, 18, 1);
-  const VW = 960, VH = 800, base = VW / SHOT.w;    // viewport of the browser window, in video pixels
-
-  // which capture is on screen, and the scroll between them
-  const toExplorer = ramp(f, pick - 26, pick - 10, IO);
-  const clickAt = pick + 14;
+  const VW = 960, VH = 750, base = VW / SHOT.w;
+  const PICK = { x: M.pick.x + M.pick.width / 2, y: M.pick.y + M.pick.height / 2 };
+  const BOOK = { x: M.book.x + M.book.width / 2, y: M.book.y + M.book.height / 2 };
+  const clickAt = pick + 4;
   const after = ramp(f, clickAt + 2, clickAt + 8);
-  const toAgent = ramp(f, read - 14, read + 2, IO);
-
-  // camera: where the viewport looks (CSS px) and how close
-  const cam = (() => {
-    if (f < pick - 10) return { x: 640, y: 380 + 40 * ramp(f, 0, pick - 26), z: 1 + 0.04 * ramp(f, 0, pick - 26) };
-    if (f < read - 14) {
-      const z = ramp(f, see - 6, see + 18, IO);
-      return { x: 640 + (BARS.x - 640) * z, y: 380 + (BARS.y - 380) * z, z: 1 + 0.95 * z };
-    }
-    const z = ramp(f, read + 2, read + 30, IO);
-    return { x: 640 + (BRIEF.x - 640) * z, y: 380 + (BRIEF.y - 380) * z, z: 1 + 0.55 * z };
-  })();
-  const shotStyle = (dy = 0, op = 1) => {
-    const sc = base * cam.z;
-    let left = VW / 2 - cam.x * sc, top = VH / 2 - cam.y * sc;
-    left = Math.min(0, Math.max(VW - SHOT.w * sc, left));
-    top = Math.min(0, Math.max(VH - SHOT.h * sc, top));
-    return { position: "absolute", left, top: top + dy, width: SHOT.w * sc, height: SHOT.h * sc, opacity: op };
-  };
-  // cursor path in CSS px of the explorer capture, drawn in viewport pixels
-  const mv = ramp(f, pick - 8, clickAt, IO);
-  const cx = 1040 + (CHIP.x - 1040) * mv, cy = 980 + (CHIP.y - 980) * mv;
+  const z = ramp(f, 4, clickAt - 2, IO) * 0.55 + ramp(f, clickAt + 6, s.frames, IO) * 0.15;
+  const cx = 640 + (BOOK.x - 640) * Math.min(1, z / 0.55), cy = 500 + (BOOK.y - 500) * Math.min(1, z / 0.55);
+  const sc = base * (1 + z);
+  let left = VW / 2 - cx * sc, top = VH / 2 - cy * sc;
+  left = Math.min(0, Math.max(VW - SHOT.w * sc, left)); top = Math.min(0, Math.max(VH - SHOT.h * sc, top));
+  const img = { position: "absolute", left, top, width: SHOT.w * sc, height: SHOT.h * sc };
+  const mv = ramp(f, pick - 16, clickAt, IO);
+  const px = 1180 + (PICK.x - 1180) * mv, py = 760 + (PICK.y - 760) * mv;
   const press = Math.max(0, 1 - Math.abs(f - clickAt) / 4);
   const ring = ramp(f, clickAt, clickAt + 14);
-  const showCursor = f > pick - 12 && f < see + 4;
-  const sc = base * cam.z;
-  const vx = (x) => shotStyle().left + x * sc, vy = (y) => shotStyle().top + y * sc;
-
   return (
     <AbsoluteFill>
       <Glow items={[{ x: W * 0.5, y: 760, r: 460, c: C.cobalt, o: 0.08 }]} />
-      <Headline appear={head} size={84} sub="The same data, open to anyone">It's all on the website</Headline>
-      <div style={{ position: "absolute", left: (W - VW) / 2, top: 292, width: VW, opacity: Math.min(1, win * 1.4),
+      <Headline appear={head} size={84} sub="The same data, open to anyone">See it on the website</Headline>
+      <div style={{ position: "absolute", left: (W - VW) / 2, top: 300, width: VW, opacity: Math.min(1, win * 1.4),
         transform: `translateY(${(1 - win) * 60}px) scale(${0.96 + 0.04 * win})`, transformOrigin: "50% 0%" }}>
         <div style={{ background: C.card, borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 2px rgba(20,22,28,.08), 0 50px 90px -40px rgba(28,34,52,.5)" }}>
           <div style={{ height: 56, display: "flex", alignItems: "center", gap: 14, padding: "0 18px", background: "#EEF0F4" }}>
             <span style={{ display: "flex", gap: 8 }}>{[C.r1, C.r3, C.r5].map((c) => <span key={c} style={{ width: 13, height: 13, borderRadius: 7, background: c }} />)}</span>
-            <span style={{ flex: 1, height: 36, borderRadius: 10, background: "#fff", display: "flex", alignItems: "center", gap: 8, padding: "0 14px",
-              font: `500 20px ${F.body}`, color: C.ink2 }}>
-              <Icon name="lock" size={17} color={C.ink3} /><span style={{ color: C.ink }}>{SITE_URL}</span>
+            <span style={{ flex: 1, height: 36, borderRadius: 10, background: "#fff", display: "flex", alignItems: "center", gap: 8, padding: "0 14px", font: `500 20px ${F.body}`, color: C.ink }}>
+              <Icon name="lock" size={17} color={C.ink3} />{SITE_URL}
             </span>
           </div>
           <div style={{ position: "relative", width: VW, height: VH, overflow: "hidden", background: C.paper }}>
-            {toExplorer < 1 && <Img src={staticFile("site/hero.jpg")} style={shotStyle(-180 * toExplorer, 1 - toExplorer)} />}
-            {toExplorer > 0 && toAgent < 1 && <Img src={staticFile("site/explorer_before.jpg")} style={shotStyle(180 * (1 - toExplorer) - 180 * toAgent, Math.min(toExplorer, 1 - toAgent))} />}
-            {after > 0 && toAgent < 1 && <Img src={staticFile("site/explorer_after.jpg")} style={shotStyle(-180 * toAgent, Math.min(after, 1 - toAgent))} />}
-            {toAgent > 0 && <Img src={staticFile("site/agent.jpg")} style={shotStyle(180 * (1 - toAgent), toAgent)} />}
+            <Img src={staticFile("site/hero_deliveroo.jpg")} style={img} />
+            {after > 0 && <Img src={staticFile("site/hero_bnp.jpg")} style={{ ...img, opacity: after }} />}
             {ring > 0 && ring < 1 && (
-              <span style={{ position: "absolute", left: vx(CHIP.x), top: vy(CHIP.y), width: 70, height: 70, marginLeft: -35, marginTop: -35, borderRadius: 35,
+              <span style={{ position: "absolute", left: left + PICK.x * sc, top: top + PICK.y * sc, width: 70, height: 70, marginLeft: -35, marginTop: -35, borderRadius: 35,
                 border: `3px solid ${C.cobalt}`, opacity: 1 - ring, transform: `scale(${0.4 + ring})` }} />
             )}
-            {showCursor && <Cursor x={vx(cx)} y={vy(cy)} press={press} />}
+            {f > pick - 18 && <Cursor x={left + px * sc} y={top + py * sc} press={press} />}
           </div>
         </div>
       </div>
@@ -740,7 +814,7 @@ function Site({ s }) {
   );
 }
 
-/* 10 ─ End card */
+/* 11 ─ End card */
 function End({ s }) {
   const f = useCurrentFrame();
   const { width: W, height: H, fps } = useVideoConfig();
@@ -782,7 +856,7 @@ function End({ s }) {
   );
 }
 
-const SCENES = { hook: Hook, intro: Intro, stream: Stream, understand: Understand, deliveroo: Deliveroo, agent: Agent, brief: Brief, improve: Improve, site: Site, cta: End };
+const SCENES = { hook: Hook, intro: Intro, stream: Stream, understand: Understand, deliveroo: Deliveroo, agent: Agent, brief: Brief, improve: Improve, why: Why, site: Site, cta: End };
 
 export function Film({ captions = true }) {
   const frame = useCurrentFrame();

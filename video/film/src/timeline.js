@@ -43,7 +43,7 @@ export function cues(data) {
       out.push({ t: at(T.steps[5]), kind: "chime" });
     }
     if (s.id === "brief") briefTimes(s).tickets.forEach((f) => out.push({ t: at(f + 20), kind: "tick" }));
-    if (s.id === "site") out.push({ t: at(wordAt(s, /^pick/i, 62) + 14), kind: "tick" });
+    if (s.id === "site") out.push({ t: at(wordAt(s, /^pick/i, 56) + 4), kind: "tick" });
     if (s.id === "cta") out.push({ t: at(4), kind: "chime" });
   });
   return out;

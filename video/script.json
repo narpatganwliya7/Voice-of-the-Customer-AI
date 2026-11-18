@@ -51,10 +51,16 @@
    "tts": "Fix the problems [Écoute](/Akˈut/) found, and [E.Leclerc](/ˌi ləklˈɛɹ/)'s recent rating could climb from 3.4 to 4.2 stars."
   },
   {
+   "id": "why",
+   "en": "Écoute doesn't just count complaints: it prices them in stars, and shows the evidence behind every finding.",
+   "fr": "Écoute ne se contente pas de compter les plaintes : il les chiffre en étoiles, et montre les preuves derrière chaque conclusion.",
+   "tts": "[Écoute](/Akˈut/) doesn't just count complaints: it prices them in stars, and shows the evidence behind every finding."
+  },
+  {
    "id": "site",
-   "en": "It's all on the Écoute website: pick any brand, see what's costing it stars, and read the agent's brief.",
-   "fr": "Tout est sur le site d'Écoute : choisissez une marque, voyez ce qui lui coûte des étoiles, et lisez la note de l'agent.",
-   "tts": "It's all on the [Écoute](/Akˈut/) website: pick any brand, see what's costing it stars, and read the agent's brief."
+   "en": "See it all on the website: pick any brand.",
+   "fr": "Tout est sur le site : choisissez une marque.",
+   "tts": "See it all on the website: pick any brand."
   },
   {
    "id": "cta",

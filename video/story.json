@@ -522,13 +522,88 @@
    }
   ]
  },
+ "why": {
+  "brand": "BNP Paribas",
+  "avg": 3.44,
+  "potential": 0.73,
+  "reviews": 592,
+  "drivers": [
+   {
+    "aspect": "app_reliability",
+    "label": "App reliability",
+    "prevalence": 0.1639,
+    "stars_lost": 0.246
+   },
+   {
+    "aspect": "features",
+    "label": "Features",
+    "prevalence": 0.1757,
+    "stars_lost": 0.123
+   },
+   {
+    "aspect": "payments_billing",
+    "label": "Payments & billing",
+    "prevalence": 0.0709,
+    "stars_lost": 0.095
+   },
+   {
+    "aspect": "login_access",
+    "label": "Login & access",
+    "prevalence": 0.103,
+    "stars_lost": 0.088
+   },
+   {
+    "aspect": "usability",
+    "label": "Ease of use & design",
+    "prevalence": 0.0659,
+    "stars_lost": 0.055
+   },
+   {
+    "aspect": "customer_service",
+    "label": "Customer service",
+    "prevalence": 0.0287,
+    "stars_lost": 0.029
+   }
+  ],
+  "by_count": [
+   {
+    "aspect": "features",
+    "label": "Features",
+    "prevalence": 0.1757,
+    "stars_lost": 0.123
+   },
+   {
+    "aspect": "app_reliability",
+    "label": "App reliability",
+    "prevalence": 0.1639,
+    "stars_lost": 0.246
+   },
+   {
+    "aspect": "login_access",
+    "label": "Login & access",
+    "prevalence": 0.103,
+    "stars_lost": 0.088
+   }
+  ],
+  "counted": "features",
+  "priced": "app_reliability",
+  "ratio": 2.0,
+  "disagree": 7,
+  "eligible": 33,
+  "quote": {
+   "text": "Application qui ne se lance pas — Depuis la dernière mise à jour, il y a trois jours, l’application ne se lance plus. Il y a un rond de chargement inf",
+   "rating": 2,
+   "source": "app_store",
+   "day": "2026-11-12"
+  }
+ },
  "stream": {
   "ratings": {
    "5": 69802,
    "2": 6966,
+   "4": 11312,
    "1": 32818,
-   "3": 6581,
-   "4": 11312
+   "3": 6581
   },
   "google_play": 108114,
   "app_store": 19365

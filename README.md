@@ -4,7 +4,7 @@
 
 *Écoute : chaque avis entendu, chaque irritant expliqué, chaque action priorisée.*
 
-**[Live website](https://narpatganwliya7.github.io/Voice-of-the-Customer-AI/)** · **[Watch the 89-second film](assets/ecoute_film.mp4)**
+**[Live website](https://narpatganwliya7.github.io/Voice-of-the-Customer-AI/)** · **[Watch the 92-second film](assets/ecoute_film.mp4)**
 
 [![Tests](https://github.com/narpatganwliya7/Voice-of-the-Customer-AI/actions/workflows/tests.yml/badge.svg)](https://github.com/narpatganwliya7/Voice-of-the-Customer-AI/actions/workflows/tests.yml)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB)
@@ -159,7 +159,7 @@ python video/prepare.py --voice store/video/voice --project video/film --story v
 cd video/film && node render_scenes.mjs 2 out/chunks && node cues.mjs public/cues.json
 python video/align_local.py narration.mp3 --out store/video/voice   # or the "Video narration" workflow
 python video/capture_site.py                                        # real website captures for the website scene
-python video/extend_music.py music.mp3 --seconds 89.2 --out music_long.wav
+python video/extend_music.py music.mp3 --seconds 91.8 --out music_long.wav
 python video/mix_audio.py --voice video/film/public/narration.wav --cues video/film/public/cues.json \
   --music music_long.wav --sfx sfx/ --out soundtrack.wav
 ```
