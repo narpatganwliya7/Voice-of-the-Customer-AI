@@ -29,7 +29,7 @@ fetch("data/bundle.json").then((r) => r.json()).then((b) => { B = b; ASP = b.ove
 const label = (k) => (ASP[k] ? ASP[k].en : k);
 
 function init() {
-  liveStrip(); hero(); pipeline(); explorer(); heatmap(); switching(); radar(); agent(); method();
+  liveStrip(); hero(); why(); pipeline(); explorer(); heatmap(); switching(); radar(); agent(); method(); tabs();
   $("built").textContent = "Data built on " + new Date(B.built_at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
 }
 
@@ -45,31 +45,118 @@ function liveStrip() {
   const ageH = last ? (Date.now() - new Date(last.finished)) / 36e5 : Infinity;
   const live = ageH < 1;
   const parts = [`<span><span class="dot ${live ? "on" : ""}"></span>${live ? "Live: new reviews are collected every few minutes" : "Showcase mode: live collection is paused"}</span>`];
-  if (last) parts.push(`<span>Last collection ${new Date(last.finished).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })} UTC, ${fmt.n(last.total_reviews)} reviews stored</span>`);
+  if (last) parts.push(`<span class="wide">Last collection ${new Date(last.finished).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })} UTC, ${fmt.n(last.total_reviews)} reviews stored</span>`);
   if (lastInc) parts.push(`<span>Measured capture delay in the last live run: ${lastInc.capture_lag_min.median} min (median)</span>`);
-  if (!live && B.overview.last_review) parts.push(`<span>Snapshot: reviews up to ${esc(B.overview.last_review)}</span>`);
+  if (!live && B.overview.last_review) parts.push(`<span>Snapshot: reviews up to ${new Date(B.overview.last_review).toLocaleDateString("en-GB", { dateStyle: "medium" })}</span>`);
   $("liveStrip").innerHTML = parts.join("");
+}
+
+/* ---------- the star ledger: five stars filled to the rating, then the stars each problem costs ---------- */
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const ALPHA = [1, 0.78, 0.6, 0.47, 0.37, 0.29, 0.23, 0.18, 0.15];
+const red = (a) => `rgba(238,65,54,${a})`;
+const hatchCss = (k) => `repeating-linear-gradient(45deg, ${red(ALPHA[k] ?? 0.15)} 0 3px, ${red((ALPHA[k] ?? 0.15) * 0.3)} 3px 7px)`;
+const starIcon = (c) => `<svg class="star-i" viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR}" fill="${c}"/></svg>`;
+const ratingColor = (r) => RATING[Math.min(5, Math.max(1, Math.round(r || 1)))];
+let meterSeq = 0;
+
+function ledgerParts(b, limit = 8) {
+  const shown = (b.drivers || []).slice(0, limit);
+  const sum = d3.sum(shown, (d) => d.stars_lost);
+  const other = Math.max(0, (b.potential || sum) - sum);
+  return { shown, other, total: Math.min(5, (b.avg_rating || 0) + sum + other) };
+}
+
+function starMeter(b, limit) {
+  const id = "m" + ++meterSeq, S = 100, g = 16, W = 5 * S + 4 * g, H = S + 26;
+  const x = (v) => { v = Math.max(0, Math.min(5, v)); const i = Math.min(4, Math.floor(v)); return i * (S + g) + Math.min(1, v - i) * S; };
+  const { shown, other } = ledgerParts(b, limit);
+  const segs = []; let cum = b.avg_rating || 0;
+  shown.forEach((d, k) => { segs.push({ from: cum, to: cum + d.stars_lost, k, tip: `${d.label}: −${fmt.s(d.stars_lost, 2)}★` }); cum += d.stars_lost; });
+  if (other >= 0.005) segs.push({ from: cum, to: cum + other, k: shown.length, tip: `Other problems: −${fmt.s(other, 2)}★` });
+  const starPaths = [0, 1, 2, 3, 4].map((i) => `<path d="${STAR}" transform="translate(${i * (S + g) - 0.5}, -2) scale(${(S + 1) / 24})"/>`).join("");
+  const pats = segs.map((sg) => `<pattern id="${id}p${sg.k}" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="9" height="9" fill="${red((ALPHA[sg.k] ?? 0.15) * 0.3)}"/><rect width="3.6" height="9" fill="${red(ALPHA[sg.k] ?? 0.15)}"/></pattern>`).join("");
+  // a segment that crosses a gap between stars is drawn as one rect from x(from) to x(to); the clip hides the gap
+  const rect = (a, z, fill, tip) => `<rect class="seg" data-x="${x(a)}" data-w="${Math.max(0, x(z) - x(a))}" x="${x(a)}" y="0" width="${reduce ? Math.max(0, x(z) - x(a)) : 0}" height="${S}" fill="${fill}"><title>${esc(tip)}</title></rect>`;
+  return `<svg class="meter" viewBox="0 -4 ${W} ${H}" role="img" aria-label="${esc(b.name)}: ${fmt.s(b.avg_rating, 2)} stars in recent written reviews, ${fmt.s(b.potential, 2)} stars at stake">
+    <defs><clipPath id="${id}c">${starPaths}</clipPath>${pats}</defs>
+    <g clip-path="url(#${id}c)">
+      <rect x="0" y="0" width="${W}" height="${S}" fill="#E4E7ED"/>
+      ${rect(0, b.avg_rating || 0, ratingColor(b.avg_rating), `Average: ${fmt.s(b.avg_rating, 2)}★`)}
+      ${segs.map((sg) => rect(sg.from, sg.to, `url(#${id}p${sg.k})`, sg.tip)).join("")}
+    </g>
+    ${[1, 2, 3, 4, 5].map((n) => `<text x="${(n - 1) * (S + g) + S / 2}" y="${S + 22}" text-anchor="middle" font-size="15" fill="${COLOR.ink3}" font-family="Geist, sans-serif">${n}</text>`).join("")}
+  </svg>`;
+}
+function animateMeter(root) {
+  if (reduce) return;
+  const segs = [...root.querySelectorAll("rect.seg")];
+  segs.forEach((r, i) => d3.select(r).attr("width", 0).transition().delay(i === 0 ? 80 : 520 + i * 110).duration(i === 0 ? 900 : 420)
+    .ease(d3.easeCubicOut).attr("width", +r.dataset.w));
+}
+function ledgerTable(b, limit, selectable) {
+  const { shown, other, total } = ledgerParts(b, limit);
+  const rows = [`<tr class="bal"><td class="sw"><i style="background:${ratingColor(b.avg_rating)}"></i></td><td class="lbl">Average rating, recent written reviews</td><td class="v">${fmt.s(b.avg_rating, 2)}${starIcon(ratingColor(b.avg_rating))}</td></tr>`];
+  shown.forEach((d, k) => rows.push(`<tr class="${selectable ? "line" : ""}" ${selectable ? `data-i="${k}" tabindex="0" aria-selected="${k === 0}"` : ""}><td class="sw"><i style="background:${hatchCss(k)}"></i></td>
+    <td class="lbl">${esc(d.label)}<small>${fmt.pct(d.prevalence, 0)} of reviews</small></td><td class="v debit">−${fmt.s(d.stars_lost, 2)}</td></tr>`));
+  if (other >= 0.005) rows.push(`<tr><td class="sw"><i style="background:${hatchCss(shown.length)}"></i></td><td class="lbl">Other problems</td><td class="v debit">−${fmt.s(other, 2)}</td></tr>`);
+  rows.push(`<tr class="total"><td></td><td class="lbl">If these problems stopped (estimate)</td><td class="v">${fmt.s(total, 2)}${starIcon(COLOR.r5)}</td></tr>`);
+  return `<table class="ledger">${rows.join("")}</table>`;
+}
+function bookHtml(b, limit, selectable) {
+  const small = b.reviews < 150 || !b.drivers.length;
+  return `<div class="bh"><h2>${esc(b.name)}</h2><span>${SECTOR[b.sector] || b.sector}, ${fmt.n(b.reviews)} written reviews, last ${B.overview.window_days} days</span></div>
+    ${starMeter(b, limit)}
+    ${small ? `<p class="empty">Small sample: topic estimates need at least 150 reviews in the window, so only the rating is shown.</p>` : ledgerTable(b, limit, selectable)}
+    ${b.store_rating ? `<p class="foot">Google Play store rating: ${fmt.s(b.store_rating, 1)}★. It counts every star rating, including the many left without a review, so it often reads higher than written reviews.</p>` : ""}`;
 }
 
 /* ---------- hero ---------- */
 const reviewCard = (r, brand = true) => `<article class="rv"><header>${brand ? `<b>${esc(r.b)}</b>` : ""}${stars(r.r)}<span>${esc(r.src)}</span></header><p lang="fr">${esc(r.t)}</p></article>`;
 function hero() {
   const o = B.overview, clf = o.classifier || {};
-  $("lede").textContent = `Écoute is an AI agent that reads what customers of ${o.brands} French brands write on Google Play and the App Store, finds what costs each brand its stars, and tells the right team what to fix first.`;
-  const facts = [
-    [fmt.n(o.reviews), "real reviews"], [o.brands, "brands"], [Object.keys(ASP).length, "pain points"],
-    [fmt.n((o.label_sources || {}).llm), "labelled by free AI"],
+  $("lede").textContent = `Écoute reads what customers of ${o.brands} French brands write on Google Play and the App Store, works out how many stars each problem costs, and sends an AI agent to investigate when something breaks.`;
+  $("facts").innerHTML = [
+    [fmt.n(o.reviews), "real reviews"], [o.brands, "brands"], [Object.keys(ASP).length, "problem types"],
     [clf.heldout ? fmt.s(clf.heldout.aspect_micro_f1) : "–", "topic F1 on unseen reviews"],
-  ];
-  $("facts").innerHTML = facts.map(([b, s]) => `<div><b class="num">${b}</b>${s}</div>`).join("");
-
+  ].map(([b, s]) => `<span><b>${b}</b> ${s}</span>`).join("");
+  const picks = ["Deliveroo", "BNP Paribas", "E.Leclerc", "SNCF Connect"].map((n) => B.brands.find((b) => b.name === n)).filter(Boolean);
+  const show = (b) => {
+    $("heroBook").innerHTML = `<div class="picks" role="group" aria-label="Brand">${picks.map((p) => `<button type="button" class="pill" data-id="${p.id}" aria-pressed="${p.id === b.id}">${esc(p.name)}</button>`).join("")}</div>${bookHtml(b, 3, false)}`;
+    animateMeter($("heroBook"));
+  };
+  $("heroBook").addEventListener("click", (e) => { const id = e.target.closest("button")?.dataset.id; if (id) show(B.brands.find((b) => b.id === id)); });
+  if (picks.length) show(picks[0]);
   const t = (B.ticker || []).filter((r) => r.t && r.t.length < 140);
-  const neg = t.filter((r) => r.r <= 2 && r.s === "negative"), pos = t.filter((r) => r.r === 5 && r.s === "positive");
-  const floats = [neg[0], pos[0], neg[1]].filter(Boolean);
-  $("scene").insertAdjacentHTML("afterbegin", floats.map((r, i) => `<div class="float f${i + 1}">${reviewCard(r)}</div>`).join(""));
-  $("scene").insertAdjacentHTML("beforeend", `<div class="arrow" aria-hidden="true"><span>1★ angry</span><span>5★ happy</span></div>`);
-  const lane = t.slice(0, 30).map((r) => reviewCard(r)).join("");
-  $("stream").innerHTML = `<div class="lane">${lane}${lane}</div>`;
+  $("stream").innerHTML = `<div class="lane">${t.slice(0, 24).map((r) => reviewCard(r)).join("")}</div>`;
+}
+
+/* ---------- why it's different: the same complaints, counted and priced ---------- */
+function why() {
+  const eligible = B.brands.filter((b) => b.drivers.length >= 3 && b.reviews >= 150);
+  const top = (b, key) => [...b.drivers].sort((x, y) => y[key] - x[key])[0];
+  const differ = eligible.filter((b) => top(b, "prevalence").aspect !== top(b, "stars_lost").aspect)
+    .sort((x, y) => (top(y, "stars_lost").stars_lost - top(y, "prevalence").stars_lost) - (top(x, "stars_lost").stars_lost - top(x, "prevalence").stars_lost));
+  $("whyIntro").innerHTML = `Ranking problems by how often they come up is the usual starting point. Écoute also measures what each one does to the rating, and the two answers are not always the same: for <b>${differ.length} of the ${eligible.length} brands</b> with enough reviews, they disagree on the biggest problem.`;
+  if (!differ.length) return;
+  const draw = (b) => {
+    const c = top(b, "prevalence"), p = top(b, "stars_lost");
+    const list = (key, unit) => {
+      const rows = [...b.drivers].sort((x, y) => y[key] - x[key]).slice(0, 5);
+      const max = rows[0][key] || 1;
+      return rows.map((d, i) => `<div class="r ${d.aspect === c.aspect || d.aspect === p.aspect ? "hl" : ""}"><span class="n">${i + 1}</span><span>${esc(d.label)}</span>
+        <span class="tr"><span style="width:${(100 * d[key]) / max}%;background:${d.aspect === p.aspect ? COLOR.r1 : d.aspect === c.aspect ? COLOR.ink : "#C9CED8"}"></span></span>
+        <span class="val">${unit === "pct" ? fmt.pct(d[key], 1) : "−" + fmt.s(d[key], 2) + "★"}</span></div>`).join("");
+    };
+    $("byCount").innerHTML = list("prevalence", "pct");
+    $("byStars").innerHTML = list("stars_lost", "stars");
+    $("verdict").innerHTML = `Counted, the biggest problem at ${esc(b.name)} is <strong>${esc(c.label.toLowerCase())}</strong> (${fmt.pct(c.prevalence, 1)} of reviews). Priced, it is <b>${esc(p.label.toLowerCase())}</b>: ${fmt.s(p.stars_lost, 2)}★ against ${fmt.s(c.stars_lost, 2)}★, from ${p.prevalence < c.prevalence ? "fewer" : "about as many"} mentions (${fmt.pct(p.prevalence, 1)}).`;
+    for (const btn of $("whyPicks").children) btn.setAttribute("aria-pressed", String(btn.dataset.id === b.id));
+  };
+  $("whyPicks").innerHTML = differ.map((b) => `<button type="button" class="pill" data-id="${b.id}">${esc(b.name)}</button>`).join("");
+  $("whyPicks").addEventListener("click", (e) => { const id = e.target.closest("button")?.dataset.id; if (id) draw(B.brands.find((b) => b.id === id)); });
+  draw(differ[0]);
 }
 
 /* ---------- how it works ---------- */
@@ -79,7 +166,7 @@ function pipeline() {
     ["Capture", "Official apps verified on Google Play and the App Store; only new reviews are pulled. Names, avatars, emails and phone numbers are never kept.", `${fmt.n(o.reviews)} reviews, ${o.brands} brands`],
     ["Understand", "A free AI model labels a sample; a local classifier learns from it and scores every review: 15 topics, tone, intent to leave, severity.", clf.heldout ? `Topic F1 ${fmt.s(clf.heldout.aspect_micro_f1)} on unseen reviews` : "Local classifier"],
     ["Explain", "SQL models: stars lost per topic, release radar, complaint spikes, switching map, weekly trends.", `${(B.spikes || []).length} spikes, ${B.brands.reduce((a, b) => a + b.releases.length, 0)} releases tracked`],
-    ["Act", "The AI analyst investigates what the numbers flag and files a brief with owners, actions and checked evidence.", `${(B.agent || []).filter((a) => a.brief).length} briefs filed`],
+    ["Act", "The AI agent investigates what the numbers flag and files a brief with owners, actions and checked evidence.", `${(B.agent || []).filter((a) => a.brief).length} briefs filed`],
   ];
   $("pipe").innerHTML = steps.map(([h, p, f]) => `<div><h4>${h}</h4><p>${p}</p><span class="fig">${f}</span></div>`).join("");
 }
@@ -93,9 +180,9 @@ function explorer() {
 
   const drawChips = () => {
     $("sectors").innerHTML = [["all", "All sectors"], ...sectors.map((s) => [s, SECTOR[s] || s])]
-      .map(([k, v]) => `<button type="button" data-k="${k}" aria-pressed="${k === sector}">${v}</button>`).join("");
+      .map(([k, v]) => `<button type="button" class="pill" data-k="${k}" aria-pressed="${k === sector}">${v}</button>`).join("");
     const list = B.brands.filter((b) => sector === "all" || b.sector === sector);
-    $("chips").innerHTML = list.map((b) => `<button type="button" data-id="${b.id}" aria-pressed="${current && b.id === current.id}">${esc(b.name)}</button>`).join("");
+    $("chips").innerHTML = list.map((b) => `<button type="button" class="pill" data-id="${b.id}" aria-pressed="${current && b.id === current.id}">${esc(b.name)}</button>`).join("");
     sectorLine(false);
   };
   const sectorLine = (opened) => {
@@ -123,35 +210,29 @@ function explorer() {
   window.selectBrand = (id) => {
     current = B.brands.find((b) => b.id === id);
     sector = current.sector; drawChips(); select(id);
-    $("explorer").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    $("ledger").scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
   };
 
   function select(id) {
     current = B.brands.find((b) => b.id === id);
     for (const btn of $("chips").children) btn.setAttribute("aria-pressed", String(btn.dataset.id === id));
     const b = current;
-    $("exName").textContent = b.name;
-    $("exSector").textContent = SECTOR[b.sector] || b.sector;
-    $("exRating").innerHTML = `${fmt.s(b.avg_rating, 2)}<span style="color:${RATING[Math.max(1, Math.round(b.avg_rating || 1))]}">★</span> <small>average, last ${B.overview.window_days} days</small>`;
-    $("exWindow").textContent = `${fmt.n(b.reviews)} reviews in the window${b.store_rating ? `; Google Play store rating ${fmt.s(b.store_rating, 1)}★` : ""}`
-      + (b.reviews < 150 ? ". Small sample: shares are indicative and topic estimates need 150+ reviews" : "");
+    $("exBook").innerHTML = bookHtml(b, 8, true);
+    animateMeter($("exBook"));
+    $("exRating").innerHTML = `${fmt.s(b.avg_rating, 2)}${starIcon(ratingColor(b.avg_rating))} <small>average, last ${B.overview.window_days} days</small>`;
+    $("exWindow").textContent = `${fmt.n(b.reviews)} written reviews in the window${b.store_rating ? `; Google Play store rating ${fmt.s(b.store_rating, 1)}★` : ""}`
+      + (b.reviews < 150 ? ". Small sample: shares are indicative" : "");
     $("exKv").innerHTML = [
       ["Negative reviews", fmt.pct(b.negative_share)], ["Say they are leaving", fmt.pct(b.leaving_share, 1)],
       ["Critical (money, access, fraud)", fmt.pct(b.critical_share, 1)], ["Problem after an app update", fmt.pct(b.after_update_share, 1)],
       ["Reviews answered by the brand", fmt.pct(b.reply_rate)],
     ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
     spark(b.weekly);
-    const maxLost = d3.max(b.drivers, (d) => d.stars_lost) || 1;
-    const ramp = [COLOR.r1, COLOR.r2, COLOR.r2, COLOR.r3, COLOR.r3, COLOR.r3, COLOR.r3];
-    $("exBars").innerHTML = b.drivers.length ? b.drivers.slice(0, 7).map((d, i) => `
-      <div class="bar"><span>${esc(d.label)}<small>${fmt.pct(d.prevalence, 1)} of reviews, −${fmt.s(d.impact, 1)}★ each</small></span>
-      <span class="track"><span class="fill" style="width:${(100 * d.stars_lost) / maxLost}%;background:${ramp[i]}"></span></span>
-      <span class="val" style="color:${i ? COLOR.ink2 : COLOR.r1}">−${fmt.s(d.stars_lost, 2)}★</span></div>`).join("") : `<p class="empty">Not enough recent reviews: topic estimates need at least 150 in the window.</p>`;
     $("wiTopic").innerHTML = b.drivers.map((d, i) => `<option value="${i}">${esc(d.label)}</option>`).join("");
     whatIf();
     const q = b.quotes || [];
-    $("exQuotes").innerHTML = q.length ? q.map((x) => `<article class="q"><img src="img/${x.kind === "pain" ? "pain" : "praise"}.webp" alt="" width="52" height="52">
-      <span class="m"><b>${x.kind === "pain" ? "Pain" : "Praise"}: ${esc(label(x.aspect))}</b>${stars(x.rating)}</span>
+    $("exQuotes").innerHTML = q.length ? q.map((x) => `<article class="q">
+      <span class="m"><b><i class="k" style="background:${x.kind === "pain" ? COLOR.r1 : COLOR.r5}"></i>${x.kind === "pain" ? "Pain" : "Praise"}: ${esc(label(x.aspect))}</b>${stars(x.rating)}</span>
       <p class="t" lang="fr">“${esc(x.text)}”</p>
       <span class="m"><span>${esc(x.source === "google_play" ? "Google Play" : "App Store")}</span><span>${esc(String(x.day).slice(0, 10))}</span></span></article>`).join("") : `<p class="empty">No quotes yet.</p>`;
     const rel = b.releases || [];
@@ -172,7 +253,11 @@ function whatIf() {
   const lift = d.stars_lost * pct / 100;
   $("wiOut").innerHTML = `${fmt.s(b.avg_rating, 2)}★ → <span class="up">${fmt.s(b.avg_rating + lift, 2)}★</span> <small class="muted" style="font:500 16px var(--body)">+${fmt.s(lift, 2)}</small>`;
 }
-$("wiTopic").addEventListener("change", whatIf);
+$("wiTopic").addEventListener("change", () => { markLine(+$("wiTopic").value); whatIf(); });
+const markLine = (i) => { for (const tr of document.querySelectorAll("#exBook tr.line")) tr.setAttribute("aria-selected", String(+tr.dataset.i === i)); };
+const pickLine = (e) => { const tr = e.target.closest("tr.line"); if (!tr) return; $("wiTopic").value = tr.dataset.i; markLine(+tr.dataset.i); whatIf(); };
+$("exBook").addEventListener("click", pickLine);
+$("exBook").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickLine(e); } });
 $("wiPct").addEventListener("input", whatIf);
 
 function spark(weekly) {
@@ -227,7 +312,7 @@ function switching() {
   const sectors = [...new Set(B.switching.map((s) => sectorOf.get(s.from_brand)).filter(Boolean))];
   let sector = sectors.includes("telecom") ? "telecom" : sectors[0];
   const draw = () => {
-    $("swSectors").innerHTML = sectors.map((s) => `<button type="button" data-k="${s}" aria-pressed="${s === sector}">${SECTOR[s] || s}</button>`).join("");
+    $("swSectors").innerHTML = sectors.map((s) => `<button type="button" class="pill" data-k="${s}" aria-pressed="${s === sector}">${SECTOR[s] || s}</button>`).join("");
     const flows = B.switching.filter((s) => sectorOf.get(s.from_brand) === sector).slice(0, 24);
     const svg = d3.select("#sankey"); svg.selectAll("*").remove();
     const W = svg.node().clientWidth || 1000, H = 520;
@@ -247,6 +332,7 @@ function switching() {
       .attr("text-anchor", (d) => (d.id.startsWith("from:") ? "end" : "start")).attr("fill", COLOR.ink).attr("font-size", 14).attr("font-weight", 500)
       .text((d) => `${d.id.split(":")[1]} (${d.value})`);
   };
+  window.drawSankey = draw;
   $("swSectors").addEventListener("click", (e) => { const k = e.target.closest("button")?.dataset.k; if (k) { sector = k; draw(); } });
   draw();
   addEventListener("resize", () => { clearTimeout(window._sw); window._sw = setTimeout(draw, 200); });
@@ -259,14 +345,14 @@ function radar() {
     items.push({ kind: r.negative_change > 0 ? "bad" : "good", id: b.id, title: `${b.name} ${r.app_version}`, line: `${r.negative_change > 0 ? "+" : ""}${(100 * r.negative_change).toFixed(0)} pts of negative reviews vs version ${r.previous_version}, ${fmt.n(r.reviews)} reviews`, date: String(r.first_seen).slice(0, 10), m: "New version" });
   for (const s of B.spikes || []) items.push({ kind: "bad", id: (B.brands.find((b) => b.name === s.brand) || {}).id, title: `${s.brand}: ${s.negative} complaints in one day`, line: `Usually ${fmt.s(s.baseline, 0)} a day, ${fmt.s(s.z, 1)} standard deviations above normal`, date: String(s.day).slice(0, 10), m: "Spike" });
   items.sort((a, b) => d3.descending(a.date, b.date));
-  $("radarList").innerHTML = items.slice(0, 12).map((i) => `<div class="alert ${i.kind === "good" ? "good" : ""}"><span class="m"><i></i>${i.m}, ${esc(i.date)}</span><b>${esc(i.title)}</b><span class="l">${esc(i.line)}</span>${i.id ? `<a href="#explorer" onclick="selectBrand('${i.id}');return false">Open the brand</a>` : ""}</div>`).join("") || `<p class="empty">No alerts in the current data.</p>`;
+  $("radarList").innerHTML = items.slice(0, 12).map((i) => `<div class="alert ${i.kind === "good" ? "good" : ""}"><span class="m"><i></i>${i.m}, ${esc(i.date)}</span><b>${esc(i.title)}</b><span class="l">${esc(i.line)}</span>${i.id ? `<a href="#ledger" onclick="selectBrand('${i.id}');return false">Open its ledger</a>` : ""}</div>`).join("") || `<p class="empty">No alerts in the current data.</p>`;
 }
 
 /* ---------- agent console ---------- */
 function agent() {
   const runs = (B.agent || []).filter((a) => a.steps && a.steps.length);
   if (!runs.length) { $("term").innerHTML = `<p class="empty">The analyst has not run on this data yet.</p>`; $("brief").innerHTML = ""; return; }
-  $("cases").innerHTML = runs.map((r, i) => `<button type="button" data-i="${i}" aria-pressed="${i === 0}">${esc(r.case.brand)}: ${esc(r.case.type.replace(/_/g, " "))}</button>`).join("");
+  $("cases").innerHTML = runs.map((r, i) => `<button type="button" class="pill" data-i="${i}" aria-pressed="${i === 0}">${esc(r.case.brand)}: ${esc(r.case.type.replace(/_/g, " "))}</button>`).join("");
   $("cases").addEventListener("click", (e) => { const i = e.target.closest("button")?.dataset.i; if (i != null) { for (const b of $("cases").children) b.setAttribute("aria-pressed", String(b.dataset.i === i)); play(runs[+i]); } });
   let timer;
   const io = new IntersectionObserver((es) => { if (es[0].isIntersecting) { play(runs[0]); io.disconnect(); } }, { threshold: 0.3 });
@@ -288,7 +374,7 @@ function agent() {
     }).join("");
     const b = run.brief;
     if (!b) { $("brief").innerHTML = `<p class="empty">This investigation did not finish (free quota or step limit reached).</p>`; return; }
-    $("brief").innerHTML = `<span class="conf">Confidence: ${esc(b.confidence)}</span><h4>${esc(b.headline)}</h4>
+    $("brief").innerHTML = `<div class="file"><span>Brief filed by the agent, ${esc(String(run.finished || "").slice(0, 10))}</span><span class="conf">Confidence: ${esc(b.confidence)}</span></div><h4>${esc(b.headline)}</h4>
       <dl><div><dt>What happened</dt><dd>${esc(b.what_happened)}</dd></div><div><dt>Likely root cause</dt><dd>${esc(b.root_cause)}</dd></div><div><dt>Impact</dt><dd>${esc(b.impact)}</dd></div></dl>
       <h3>Recommended actions</h3>${(b.actions || []).map((a) => `<div class="act"><img src="${TEAM_IMG(a.team)}" alt="" width="46" height="46"><div><b>${esc(a.action)}</b><small>${esc(a.team)}${a.expected_effect ? `: ${esc(a.expected_effect)} (agent's estimate)` : ""}</small></div></div>`).join("")}
       <h3 style="margin-top:18px">Evidence ${run.evidence_verified ? `<span class="ok">every cited review was read by the agent</span>` : ""}</h3>
@@ -316,4 +402,14 @@ function method() {
     <tr><td>Leaving the company, F1</td><td>${fmt.s((c.churn || {}).leaving_company_f1)}</td><td>–</td></tr>
     <tr><td>Topic polarity, accuracy</td><td>${fmt.s((c.aspect_polarity || {}).accuracy)}</td><td>–</td></tr>
     </tbody></table><p class="note">Trained on ${fmt.n(c.n_train)} AI-labelled reviews; ${fmt.n(c.n_heldout)} unseen reviews were never used for training or tuning. The figures measure agreement with the AI labels, not with human judgement. Accuracy flatters tone because most reviews are clearly negative or positive; macro F1 weighs the rare neutral and mixed ones equally. Weakest topics: ${weakTopics(c)}.</p>`;
+}
+
+/* ---------- market view tabs ---------- */
+function tabs() {
+  const ids = [["tMap", "pMap"], ["tSwitch", "pSwitch"], ["tRadar", "pRadar"]];
+  const open = (t) => {
+    for (const [ti, pi] of ids) { const on = ti === t; $(ti).setAttribute("aria-selected", String(on)); $(ti).setAttribute("aria-pressed", String(on)); $(pi).hidden = !on; }
+    if (t === "tSwitch" && window.drawSankey) window.drawSankey();
+  };
+  for (const [ti] of ids) $(ti).addEventListener("click", () => open(ti));
 }
